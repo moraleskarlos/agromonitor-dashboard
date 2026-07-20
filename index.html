@@ -280,7 +280,7 @@
   <div class="filters">
     <div class="filter-group">
       <label>Tipo</label>
-      <select id="filtroTipo" onchange="aplicarFiltros()">
+      <select id="filtroTipo">
         <option value="">Todos</option>
         <option value="Goteo">Goteo</option>
         <option value="Drenaje">Drenaje</option>
@@ -289,7 +289,7 @@
     </div>
     <div class="filter-group">
       <label>Equipo</label>
-      <select id="filtroEquipo" onchange="aplicarFiltros()">
+      <select id="filtroEquipo" onchange="actualizarSectores()">
         <option value="">Todos</option>
         <option>Equipo 3 FRU</option>
         <option>Equipo HID 3 FRU</option>
@@ -300,18 +300,19 @@
     </div>
     <div class="filter-group">
       <label>Sector</label>
-      <select id="filtroSector" onchange="aplicarFiltros()">
+      <select id="filtroSector">
         <option value="">Todos</option>
       </select>
     </div>
     <div class="filter-group">
       <label>Fecha desde</label>
-      <input type="date" id="filtroDesde" onchange="aplicarFiltros()" />
+      <input type="date" id="filtroDesde" />
     </div>
     <div class="filter-group">
       <label>Fecha hasta</label>
-      <input type="date" id="filtroHasta" onchange="aplicarFiltros()" />
+      <input type="date" id="filtroHasta" />
     </div>
+    <button id="searchBtn" onclick="aplicarFiltros()" style="background:var(--accent);color:#0a1a0d;border:none;border-radius:8px;padding:8px 16px;font-weight:700;font-size:13px;cursor:pointer;align-self:flex-end;">🔍 Buscar</button>
     <button id="clearFilters" onclick="limpiarFiltros()">✕ Limpiar</button>
   </div>
 
@@ -725,9 +726,13 @@ function showTab(id, btn) {
 cargarDatos();
 setInterval(cargarDatos, 15 * 60 * 1000); // Auto-actualiza cada 15 min
 
-// Fecha de hoy por defecto
+// Fechas por defecto - desde hace 30 dias hasta hoy
 const hoy = new Date().toISOString().split('T')[0];
+const hace30 = new Date();
+hace30.setDate(hace30.getDate() - 30);
+const hace30str = hace30.toISOString().split('T')[0];
 document.getElementById('filtroHasta').value = hoy;
+document.getElementById('filtroDesde').value = hace30str;
 </script>
 </body>
 </html>
