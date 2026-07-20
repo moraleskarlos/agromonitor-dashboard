@@ -460,18 +460,32 @@ let charts = {};
 async function cargarDatos() {
   document.getElementById('lastUpdate').textContent = 'Actualizando...';
   try {
-    const res = await fetch(SHEETS_URL, { method: 'GET', mode: 'cors', redirect: 'follow' });
-    const data = await res.json();
+    const res = await fetch(SHEETS_URL, { method: 'GET', redirect: 'follow' });
+    const text = await res.text();
+    const data = JSON.parse(text);
     if (data.status === 'ok') {
-      DATOS = data.registros || [];
+      // Normalizar fechas
+      DATOS = (data.registros || []).map(r => ({
+        ...r,
+        fecha: normalizarFecha(r.fecha)
+      }));
       aplicarFiltros();
       document.getElementById('lastUpdate').textContent = 
         'Actualizado: ' + new Date().toLocaleTimeString('es-CL');
     }
   } catch(e) {
     document.getElementById('lastUpdate').textContent = 'Error al cargar datos';
-    console.error(e);
+    console.error('Error:', e);
   }
+}
+
+function normalizarFecha(f) {
+  if (!f) return '';
+  try {
+    const d = new Date(f);
+    if (isNaN(d.getTime())) return String(f);
+    return d.toISOString().split('T')[0];
+  } catch(e) { return String(f); }
 }
 
 // ── FILTROS ───────────────────────────────────────────────────────────────────
