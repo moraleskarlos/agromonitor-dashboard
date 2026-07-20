@@ -460,7 +460,7 @@ let charts = {};
 async function cargarDatos() {
   document.getElementById('lastUpdate').textContent = 'Actualizando...';
   try {
-    const res = await fetch(SHEETS_URL, { method: 'GET', mode: 'cors' });
+    const res = await fetch(SHEETS_URL, { method: 'GET', mode: 'cors', redirect: 'follow' });
     const data = await res.json();
     if (data.status === 'ok') {
       DATOS = data.registros || [];
