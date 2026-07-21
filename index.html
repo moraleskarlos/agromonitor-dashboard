@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AgroMonitor — Dashboard</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     :root {
       --bg:       #0a1a0d;
@@ -287,6 +288,7 @@
     <p>Sistema de monitoreo de fertirriego</p>
   </div>
   <div class="last-update" id="lastUpdate">Cargando...</div>
+  <button id="downloadBtn" onclick="descargarExcel()" style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-weight:700;font-size:13px;cursor:pointer;margin-right:8px;">📥 Descargar Excel</button>
   <button id="refreshBtn" onclick="cargarDatos()">↻ Actualizar</button>
 </header>
 
@@ -840,6 +842,59 @@ function showTab(id, btn) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.getElementById('tab-' + id).classList.add('active');
   btn.classList.add('active');
+}
+
+// ── DESCARGA EXCEL ───────────────────────────────────────────────────────────
+function descargarExcel() {
+  if (!FILTRADOS.length) {
+    alert('No hay datos para descargar.');
+    return;
+  }
+
+  const wb = XLSX.utils.book_new();
+
+  const headersMedicion = ['Fecha','Trabajador','Equipo','Sector','pH','CE','Nitratos','Potasio','Calcio','Sodio'];
+  const headersHumedad  = ['Fecha','Trabajador','Equipo','Sector','Hilera','H. Inicial','H. Media','H. Final'];
+
+  function toRowMedicion(r) {
+    return [r.fecha||'', r.trabajador||'', r.equipo||'', r.sector||'',
+            r.pH||'', r.CE||'', r.Nitratos||'', r.Potasio||'', r.Calcio||'', r.Sodio||''];
+  }
+  function toRowHumedad(r) {
+    return [r.fecha||'', r.trabajador||'', r.equipo||'', r.sector||'',
+            r.hilera||'', r.humedad_inicial||'', r.humedad_media||'', r.humedad_final||''];
+  }
+
+  // Hoja 1 — Todos los registros
+  const todosData = FILTRADOS.map(r => {
+    if (r.tipo === 'Humedad') return ['Humedad', ...toRowHumedad(r)];
+    return [r.tipo||'', ...toRowMedicion(r)];
+  });
+  const wsTodos = XLSX.utils.aoa_to_sheet([['Tipo',...headersMedicion], ...todosData]);
+  wsTodos['!cols'] = [{wch:10},{wch:12},{wch:22},{wch:18},{wch:16},{wch:8},{wch:8},{wch:10},{wch:10},{wch:10},{wch:10}];
+  XLSX.utils.book_append_sheet(wb, wsTodos, 'Todos los registros');
+
+  // Hoja 2 — Goteo
+  const goteoData = FILTRADOS.filter(r => r.tipo === 'Goteo').map(toRowMedicion);
+  const wsGoteo = XLSX.utils.aoa_to_sheet([headersMedicion, ...goteoData]);
+  wsGoteo['!cols'] = [{wch:12},{wch:22},{wch:18},{wch:16},{wch:8},{wch:8},{wch:10},{wch:10},{wch:10},{wch:10}];
+  XLSX.utils.book_append_sheet(wb, wsGoteo, 'Goteo');
+
+  // Hoja 3 — Drenaje
+  const drenajeData = FILTRADOS.filter(r => r.tipo === 'Drenaje').map(toRowMedicion);
+  const wsDrenaje = XLSX.utils.aoa_to_sheet([headersMedicion, ...drenajeData]);
+  wsDrenaje['!cols'] = [{wch:12},{wch:22},{wch:18},{wch:16},{wch:8},{wch:8},{wch:10},{wch:10},{wch:10},{wch:10}];
+  XLSX.utils.book_append_sheet(wb, wsDrenaje, 'Drenaje');
+
+  // Hoja 4 — Humedad
+  const humedadData = FILTRADOS.filter(r => r.tipo === 'Humedad').map(toRowHumedad);
+  const wsHumedad = XLSX.utils.aoa_to_sheet([headersHumedad, ...humedadData]);
+  wsHumedad['!cols'] = [{wch:12},{wch:22},{wch:18},{wch:16},{wch:8},{wch:12},{wch:12},{wch:12}];
+  XLSX.utils.book_append_sheet(wb, wsHumedad, 'Humedad');
+
+  // Nombre del archivo con fecha
+  const hoy = new Date().toISOString().split('T')[0];
+  XLSX.writeFile(wb, `AgroMonitor_Reporte_${hoy}.xlsx`);
 }
 
 // ── INICIO ────────────────────────────────────────────────────────────────────
