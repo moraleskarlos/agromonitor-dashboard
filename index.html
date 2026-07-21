@@ -260,6 +260,22 @@
     .empty { text-align: center; padding: 32px; color: var(--muted); font-size: 13px; }
     .tab-content { display: none; }
     .tab-content.active { display: block; }
+    .graf-btn {
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 18px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .graf-btn.active {
+      background: var(--accent);
+      color: var(--bg);
+      border-color: var(--accent);
+    }
   </style>
 </head>
 <body>
@@ -347,30 +363,66 @@
 
   <!-- TAB: GRÁFICOS -->
   <div id="tab-graficos" class="tab-content">
-    <div class="grid2">
-      <div class="card">
-        <div class="card-title">📈 Evolución pH</div>
-        <div class="chart-container"><canvas id="chartPH"></canvas></div>
+    <!-- Selector de vista -->
+    <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
+      <button class="graf-btn active" onclick="setGrafView('goteo',this)">💧 Goteo</button>
+      <button class="graf-btn" onclick="setGrafView('drenaje',this)">🚿 Drenaje</button>
+      <button class="graf-btn" onclick="setGrafView('humedad',this)">🌱 Humedad</button>
+      <button class="graf-btn" onclick="setGrafView('general',this)">📊 General</button>
+    </div>
+
+    <!-- Vista Goteo / Drenaje -->
+    <div id="grafView-goteo" class="graf-view">
+      <div class="grid2">
+        <div class="card"><div class="card-title">📅 Registros por día</div><div class="chart-container"><canvas id="chartGoteoDias"></canvas></div></div>
+        <div class="card"><div class="card-title">🗺️ Top sectores</div><div class="chart-container"><canvas id="chartGoteoSectores"></canvas></div></div>
       </div>
-      <div class="card">
-        <div class="card-title">📈 Evolución CE</div>
-        <div class="chart-container"><canvas id="chartCE"></canvas></div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">
+        <div class="card"><div class="card-title">📈 pH</div><div class="chart-container" style="height:160px"><canvas id="chartGoteoPH"></canvas></div></div>
+        <div class="card"><div class="card-title">📈 CE</div><div class="chart-container" style="height:160px"><canvas id="chartGoteoCE"></canvas></div></div>
+        <div class="card"><div class="card-title">📈 Nitratos</div><div class="chart-container" style="height:160px"><canvas id="chartGoteoNitratos"></canvas></div></div>
+        <div class="card"><div class="card-title">📈 Potasio</div><div class="chart-container" style="height:160px"><canvas id="chartGoteoPotasio"></canvas></div></div>
+        <div class="card"><div class="card-title">📈 Calcio</div><div class="chart-container" style="height:160px"><canvas id="chartGoteoCalcio"></canvas></div></div>
+        <div class="card"><div class="card-title">📈 Sodio</div><div class="chart-container" style="height:160px"><canvas id="chartGoteoSodio"></canvas></div></div>
       </div>
-      <div class="card">
-        <div class="card-title">📈 Evolución Nitratos</div>
-        <div class="chart-container"><canvas id="chartNitratos"></canvas></div>
+    </div>
+
+    <!-- Vista Drenaje -->
+    <div id="grafView-drenaje" class="graf-view" style="display:none">
+      <div class="grid2">
+        <div class="card"><div class="card-title">📅 Registros por día</div><div class="chart-container"><canvas id="chartDrenajeDias"></canvas></div></div>
+        <div class="card"><div class="card-title">🗺️ Top sectores</div><div class="chart-container"><canvas id="chartDrenajeSectores"></canvas></div></div>
       </div>
-      <div class="card">
-        <div class="card-title">📈 Evolución Potasio</div>
-        <div class="chart-container"><canvas id="chartPotasio"></canvas></div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">
+        <div class="card"><div class="card-title">📈 pH</div><div class="chart-container" style="height:160px"><canvas id="chartDrenajePH"></canvas></div></div>
+        <div class="card"><div class="card-title">📈 CE</div><div class="chart-container" style="height:160px"><canvas id="chartDrenajeCE"></canvas></div></div>
+        <div class="card"><div class="card-title">📈 Nitratos</div><div class="chart-container" style="height:160px"><canvas id="chartDrenajeNitratos"></canvas></div></div>
+        <div class="card"><div class="card-title">📈 Potasio</div><div class="chart-container" style="height:160px"><canvas id="chartDrenajePotasio"></canvas></div></div>
+        <div class="card"><div class="card-title">📈 Calcio</div><div class="chart-container" style="height:160px"><canvas id="chartDrenajeCalcio"></canvas></div></div>
+        <div class="card"><div class="card-title">📈 Sodio</div><div class="chart-container" style="height:160px"><canvas id="chartDrenajeSodio"></canvas></div></div>
       </div>
-      <div class="card">
-        <div class="card-title">📈 Evolución Calcio</div>
-        <div class="chart-container"><canvas id="chartCalcio"></canvas></div>
+    </div>
+
+    <!-- Vista Humedad -->
+    <div id="grafView-humedad" class="graf-view" style="display:none">
+      <div class="grid2">
+        <div class="card"><div class="card-title">📅 Registros por día</div><div class="chart-container"><canvas id="chartHumedadDias"></canvas></div></div>
+        <div class="card"><div class="card-title">🗺️ Top sectores</div><div class="chart-container"><canvas id="chartHumedadSectores"></canvas></div></div>
       </div>
-      <div class="card">
-        <div class="card-title">📈 Evolución Sodio</div>
-        <div class="chart-container"><canvas id="chartSodio"></canvas></div>
+      <div class="grid3">
+        <div class="card"><div class="card-title">💧 H. Inicial promedio</div><div class="chart-container" style="height:160px"><canvas id="chartHumedadInicial"></canvas></div></div>
+        <div class="card"><div class="card-title">💧 H. Media promedio</div><div class="chart-container" style="height:160px"><canvas id="chartHumedadMedia"></canvas></div></div>
+        <div class="card"><div class="card-title">💧 H. Final promedio</div><div class="chart-container" style="height:160px"><canvas id="chartHumedadFinal"></canvas></div></div>
+      </div>
+    </div>
+
+    <!-- Vista General -->
+    <div id="grafView-general" class="graf-view" style="display:none">
+      <div class="grid2">
+        <div class="card"><div class="card-title">📅 Todos los registros por día</div><div class="chart-container"><canvas id="chartGeneralDias"></canvas></div></div>
+        <div class="card"><div class="card-title">👷 Registros por trabajador</div><div class="chart-container"><canvas id="chartGeneralTrabajadores"></canvas></div></div>
+        <div class="card"><div class="card-title">📊 Goteo vs Drenaje por sector</div><div class="chart-container"><canvas id="chartGeneralSectores"></canvas></div></div>
+        <div class="card"><div class="card-title">🔢 Distribución por tipo</div><div class="chart-container"><canvas id="chartGeneralTipos"></canvas></div></div>
       </div>
     </div>
   </div>
@@ -616,68 +668,122 @@ function fmtVal(val, param) {
 }
 
 // ── GRÁFICOS ──────────────────────────────────────────────────────────────────
-function renderGraficos() {
-  const params = ['pH','CE','Nitratos','Potasio','Calcio','Sodio'];
-  const ids    = ['chartPH','chartCE','chartNitratos','chartPotasio','chartCalcio','chartSodio'];
+let currentGrafView = 'goteo';
 
-  const goteo   = FILTRADOS.filter(r => r.tipo === 'Goteo').slice(-20);
-  const drenaje = FILTRADOS.filter(r => r.tipo === 'Drenaje').slice(-20);
-  const labels  = [...new Set([...goteo, ...drenaje].map(r => r.fecha || ''))].sort().slice(-20);
+function setGrafView(view, btn) {
+  currentGrafView = view;
+  document.querySelectorAll('.graf-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.graf-view').forEach(v => v.style.display = 'none');
+  document.getElementById('grafView-' + view).style.display = 'block';
+  renderGraficos();
+}
 
-  params.forEach((param, i) => {
-    if (charts[param]) { charts[param].destroy(); }
-    const ctx = document.getElementById(ids[i]).getContext('2d');
-    const rango = RANGOS[param];
-
-    charts[param] = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels,
-        datasets: [
-          {
-            label: `Goteo`,
-            data: labels.map(l => {
-              const r = goteo.find(x => x.fecha === l);
-              return r ? parseFloat(r[param]) || null : null;
-            }),
-            borderColor: '#4caf50',
-            backgroundColor: '#4caf5022',
-            tension: 0.4,
-            pointRadius: 4,
-            fill: false,
-          },
-          {
-            label: `Drenaje`,
-            data: labels.map(l => {
-              const r = drenaje.find(x => x.fecha === l);
-              return r ? parseFloat(r[param]) || null : null;
-            }),
-            borderColor: '#ce93d8',
-            backgroundColor: '#ce93d822',
-            tension: 0.4,
-            pointRadius: 4,
-            fill: false,
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { labels: { color: '#6b9470', font: { size: 11 } } },
-          annotation: {}
-        },
-        scales: {
-          x: { ticks: { color: '#6b9470', font: { size: 10 } }, grid: { color: '#1e3d22' } },
-          y: {
-            ticks: { color: '#6b9470', font: { size: 10 } },
-            grid: { color: '#1e3d22' },
-            min: Math.max(0, (rango.alerta_baja || rango.min) * 0.7),
-          }
-        }
-      }
-    });
+function mkChart(id, type, labels, datasets, opts = {}) {
+  if (charts[id]) charts[id].destroy();
+  const el = document.getElementById(id);
+  if (!el) return;
+  charts[id] = new Chart(el.getContext('2d'), {
+    type,
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#6b9470', font: { size: 10 } } } },
+      scales: type !== 'doughnut' ? {
+        x: { ticks: { color: '#6b9470', font: { size: 9 } }, grid: { color: '#1e3d22' } },
+        y: { ticks: { color: '#6b9470', font: { size: 9 } }, grid: { color: '#1e3d22' } }
+      } : {},
+      ...opts
+    }
   });
+}
+
+function getDias(data) {
+  const cnt = {};
+  data.forEach(r => { cnt[r.fecha] = (cnt[r.fecha] || 0) + 1; });
+  const labels = Object.keys(cnt).sort();
+  return { labels, values: labels.map(l => cnt[l]) };
+}
+
+function getSectores(data) {
+  const cnt = {};
+  data.forEach(r => { if(r.sector) cnt[r.sector] = (cnt[r.sector] || 0) + 1; });
+  const sorted = Object.entries(cnt).sort((a,b) => b[1]-a[1]).slice(0,8);
+  return { labels: sorted.map(x=>x[0]), values: sorted.map(x=>x[1]) };
+}
+
+function getLinea(data, param) {
+  const byFecha = {};
+  data.forEach(r => {
+    const v = parseFloat(r[param]);
+    if (!isNaN(v)) { if (!byFecha[r.fecha]) byFecha[r.fecha] = []; byFecha[r.fecha].push(v); }
+  });
+  const labels = Object.keys(byFecha).sort();
+  return { labels, values: labels.map(l => byFecha[l].reduce((a,b)=>a+b,0)/byFecha[l].length) };
+}
+
+const COLORS = ['#4caf50','#81c784','#a5d6a7','#ce93d8','#42a5f5','#ffd54f','#ef5350','#26c6da'];
+
+function renderGraficos() {
+  const goteo   = FILTRADOS.filter(r => r.tipo === 'Goteo');
+  const drenaje = FILTRADOS.filter(r => r.tipo === 'Drenaje');
+  const humedad = FILTRADOS.filter(r => r.tipo === 'Humedad');
+  const params  = ['pH','CE','Nitratos','Potasio','Calcio','Sodio'];
+
+  if (currentGrafView === 'goteo') {
+    const d = getDias(goteo);
+    mkChart('chartGoteoDias', 'bar', d.labels, [{ label: 'Registros', data: d.values, backgroundColor: '#4caf5066', borderColor: '#4caf50', borderWidth: 1 }]);
+    const s = getSectores(goteo);
+    mkChart('chartGoteoSectores', 'bar', s.labels, [{ label: 'Registros', data: s.values, backgroundColor: '#42a5f566', borderColor: '#42a5f5', borderWidth: 1 }], { indexAxis: 'y' });
+    params.forEach(p => { const l = getLinea(goteo, p); mkChart('chartGoteo'+p, 'line', l.labels, [{ label: p, data: l.values, borderColor: '#4caf50', backgroundColor: '#4caf5022', tension: 0.4, pointRadius: 3, fill: true }]); });
+  }
+
+  if (currentGrafView === 'drenaje') {
+    const d = getDias(drenaje);
+    mkChart('chartDrenajeDias', 'bar', d.labels, [{ label: 'Registros', data: d.values, backgroundColor: '#ce93d866', borderColor: '#ce93d8', borderWidth: 1 }]);
+    const s = getSectores(drenaje);
+    mkChart('chartDrenajeSectores', 'bar', s.labels, [{ label: 'Registros', data: s.values, backgroundColor: '#42a5f566', borderColor: '#42a5f5', borderWidth: 1 }], { indexAxis: 'y' });
+    params.forEach(p => { const l = getLinea(drenaje, p); mkChart('chartDrenaje'+p, 'line', l.labels, [{ label: p, data: l.values, borderColor: '#ce93d8', backgroundColor: '#ce93d822', tension: 0.4, pointRadius: 3, fill: true }]); });
+  }
+
+  if (currentGrafView === 'humedad') {
+    const d = getDias(humedad);
+    mkChart('chartHumedadDias', 'bar', d.labels, [{ label: 'Registros', data: d.values, backgroundColor: '#ffd54f66', borderColor: '#ffd54f', borderWidth: 1 }]);
+    const s = getSectores(humedad);
+    mkChart('chartHumedadSectores', 'bar', s.labels, [{ label: 'Sectores', data: s.values, backgroundColor: '#ffd54f66', borderColor: '#ffd54f', borderWidth: 1 }], { indexAxis: 'y' });
+    ['Inicial','Media','Final'].forEach(tipo => {
+      const key = 'humedad_' + tipo.toLowerCase();
+      const l = getLinea(humedad, key);
+      mkChart('chartHumedad'+tipo, 'bar', l.labels, [{ label: 'Promedio %', data: l.values, backgroundColor: '#ffd54f66', borderColor: '#ffd54f', borderWidth: 1 }]);
+    });
+  }
+
+  if (currentGrafView === 'general') {
+    // Todos por dia
+    const d = getDias(FILTRADOS);
+    mkChart('chartGeneralDias', 'bar', d.labels, [
+      { label: 'Goteo',   data: d.labels.map(l => goteo.filter(r=>r.fecha===l).length),   backgroundColor: '#4caf5066', borderColor: '#4caf50', borderWidth:1 },
+      { label: 'Drenaje', data: d.labels.map(l => drenaje.filter(r=>r.fecha===l).length), backgroundColor: '#ce93d866', borderColor: '#ce93d8', borderWidth:1 },
+      { label: 'Humedad', data: d.labels.map(l => humedad.filter(r=>r.fecha===l).length), backgroundColor: '#ffd54f66', borderColor: '#ffd54f', borderWidth:1 },
+    ]);
+    // Por trabajador
+    const trab = {};
+    FILTRADOS.forEach(r => { if(r.trabajador) trab[r.trabajador.split(' ')[0]] = (trab[r.trabajador.split(' ')[0]]||0)+1; });
+    const tKeys = Object.keys(trab);
+    mkChart('chartGeneralTrabajadores', 'bar', tKeys, [{ label: 'Registros', data: tKeys.map(k=>trab[k]), backgroundColor: COLORS }]);
+    // Goteo vs Drenaje por sector
+    const sects = [...new Set([...goteo,...drenaje].map(r=>r.sector).filter(Boolean))].slice(0,8);
+    mkChart('chartGeneralSectores', 'bar', sects, [
+      { label: 'Goteo',   data: sects.map(s=>goteo.filter(r=>r.sector===s).length),   backgroundColor: '#4caf5066', borderColor:'#4caf50', borderWidth:1 },
+      { label: 'Drenaje', data: sects.map(s=>drenaje.filter(r=>r.sector===s).length), backgroundColor: '#ce93d866', borderColor:'#ce93d8', borderWidth:1 },
+    ]);
+    // Distribución por tipo
+    mkChart('chartGeneralTipos', 'doughnut',
+      ['Goteo','Drenaje','Humedad'],
+      [{ data: [goteo.length, drenaje.length, humedad.length], backgroundColor: ['#4caf50','#ce93d8','#ffd54f'], borderWidth: 0 }]
+    );
+  }
 }
 
 // ── ALERTAS Z-SCORE ───────────────────────────────────────────────────────────
