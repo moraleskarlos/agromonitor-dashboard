@@ -474,10 +474,10 @@
               <th>Trabajador</th>
               <th>Equipo</th>
               <th>Sector</th>
-              <th>pH</th>
-              <th>CE</th>
-              <th>Nitratos</th>
-              <th>Potasio</th>
+              <th>pH / Hilera</th>
+              <th>CE / H.Inicial</th>
+              <th>Nitratos / H.Media</th>
+              <th>Potasio / H.Final</th>
               <th>Calcio</th>
               <th>Sodio</th>
             </tr>
@@ -644,18 +644,19 @@ function renderTabla() {
   tbody.innerHTML = [...FILTRADOS].reverse().map(r => {
     const tipo = r.tipo || '—';
     const badgeClass = tipo === 'Goteo' ? 'badge-goteo' : tipo === 'Drenaje' ? 'badge-drenaje' : 'badge-humedad';
+    const isHumedad = tipo === 'Humedad';
     return `<tr>
       <td><span class="badge ${badgeClass}">${tipo}</span></td>
       <td>${r.fecha || '—'}</td>
       <td>${(r.trabajador || '—').split(' ')[0]}</td>
       <td>${r.equipo || '—'}</td>
       <td>${r.sector || '—'}</td>
-      <td>${fmtVal(r.pH,'pH')}</td>
-      <td>${fmtVal(r.CE,'CE')}</td>
-      <td>${fmtVal(r.Nitratos,'Nitratos')}</td>
-      <td>${fmtVal(r.Potasio,'Potasio')}</td>
-      <td>${fmtVal(r.Calcio,'Calcio')}</td>
-      <td>${fmtVal(r.Sodio,'Sodio')}</td>
+      <td>${isHumedad ? (r.hilera || '—') : fmtVal(r.pH,'pH')}</td>
+      <td>${isHumedad ? (r.humedad_inicial !== undefined ? r.humedad_inicial : '—') : fmtVal(r.CE,'CE')}</td>
+      <td>${isHumedad ? (r.humedad_media !== undefined ? r.humedad_media : '—') : fmtVal(r.Nitratos,'Nitratos')}</td>
+      <td>${isHumedad ? (r.humedad_final !== undefined ? r.humedad_final : '—') : fmtVal(r.Potasio,'Potasio')}</td>
+      <td>${isHumedad ? '—' : fmtVal(r.Calcio,'Calcio')}</td>
+      <td>${isHumedad ? '—' : fmtVal(r.Sodio,'Sodio')}</td>
     </tr>`;
   }).join('');
 }
