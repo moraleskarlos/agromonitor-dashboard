@@ -277,11 +277,65 @@
       color: var(--bg);
       border-color: var(--accent);
     }
+    .login-overlay {
+      position: fixed; inset: 0; background: #0f1720; z-index: 9999;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .login-box {
+      background: #1c2733; border-radius: 12px; padding: 32px 28px; width: 320px;
+      box-shadow: 0 8px 30px rgba(0,0,0,.4);
+    }
+    .login-box h2 { color: #fff; margin: 0 0 6px; font-size: 20px; }
+    .login-box p { color: #8fa3b3; margin: 0 0 20px; font-size: 13px; }
+    .login-box input {
+      width: 100%; box-sizing: border-box; padding: 10px 12px; margin-bottom: 12px;
+      border-radius: 8px; border: 1px solid #33475a; background: #0f1720; color: #fff; font-size: 14px;
+    }
+    .login-box button {
+      width: 100%; padding: 10px; border: none; border-radius: 8px; background: var(--blue,#2f80ed);
+      color: #fff; font-weight: 700; cursor: pointer; font-size: 14px;
+    }
+    .login-error { color: #ff6b6b; font-size: 12px; margin-top: 10px; min-height: 16px; }
+
+    .ult-fecha { font-size: 11px; color: var(--muted,#8fa3b3); margin: -6px 0 10px; }
+
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 9998;
+      align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-box {
+      background: #1c2733; border-radius: 12px; padding: 24px; width: 100%; max-width: 560px;
+      max-height: 85vh; overflow-y: auto; box-shadow: 0 8px 30px rgba(0,0,0,.4);
+    }
+    .modal-box h3 { color: #fff; margin: 0 0 16px; }
+    .rangos-row {
+      display: grid; grid-template-columns: 90px repeat(4, 1fr); gap: 8px; align-items: end;
+      margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #2c3b4a;
+    }
+    .rangos-param { color: #fff; font-weight: 700; font-size: 13px; align-self: center; }
+    .rangos-row label { font-size: 10px; color: #8fa3b3; display: flex; flex-direction: column; gap: 3px; }
+    .rangos-row input, #rangosMotivoDetalle {
+      width: 100%; box-sizing: border-box; padding: 6px 8px; border-radius: 6px;
+      border: 1px solid #33475a; background: #0f1720; color: #fff; font-size: 12px;
+    }
+    .hist-row { border-bottom: 1px solid #2c3b4a; padding: 10px 0; color: #fff; font-size: 13px; }
+    .hist-meta { color: #8fa3b3; font-size: 11px; margin-top: 2px; }
   </style>
 </head>
 <body>
 
-<header>
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <h2>🌿 AgroMonitor</h2>
+    <p>Iniciá sesión para ver el dashboard</p>
+    <input type="text" id="loginUser" placeholder="Usuario (ej: juan.perez)" autocomplete="username">
+    <input type="password" id="loginPass" placeholder="Contraseña" autocomplete="current-password">
+    <button id="loginBtn">Entrar</button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
+<header id="appHeader" style="display:none;">
   <div class="logo">🌿</div>
   <div class="header-title">
     <h1>AgroMonitor — Dashboard</h1>
@@ -290,9 +344,10 @@
   <div class="last-update" id="lastUpdate">Cargando...</div>
   <button id="downloadBtn" onclick="descargarExcel()" style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-weight:700;font-size:13px;cursor:pointer;margin-right:8px;">📥 Descargar Excel</button>
   <button id="refreshBtn" onclick="cargarDatos()">↻ Actualizar</button>
+  <button id="logoutBtn" style="background:#5a6b7a;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-weight:700;font-size:13px;cursor:pointer;margin-left:8px;">Salir</button>
 </header>
 
-<div class="container">
+<div class="container" id="appContainer" style="display:none;">
 
   <!-- FILTROS -->
   <div class="filters">
@@ -350,15 +405,59 @@
     <div class="grid2">
       <div class="card">
         <div class="card-title">🌡️ Últimos valores — Goteo</div>
+        <div class="ult-fecha" id="fechaGoteo"></div>
         <div class="semaforo-grid" id="semaforoGoteo">
           <div class="empty">Sin datos</div>
         </div>
       </div>
       <div class="card">
         <div class="card-title">🚿 Últimos valores — Drenaje</div>
+        <div class="ult-fecha" id="fechaDrenaje"></div>
         <div class="semaforo-grid" id="semaforoDrenaje">
           <div class="empty">Sin datos</div>
         </div>
+      </div>
+      <div class="card">
+        <div class="card-title">🌱 Últimos valores — Humedad</div>
+        <div class="ult-fecha" id="fechaHumedad"></div>
+        <div class="semaforo-grid" id="semaforoHumedad">
+          <div class="empty">Sin datos</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: EDITAR RANGOS -->
+  <div class="modal-overlay" id="rangosModal">
+    <div class="modal-box">
+      <h3>Editar rangos de referencia</h3>
+      <div id="rangosForm"></div>
+      <div class="filter-group" style="margin-top:12px;">
+        <label>Motivo del cambio</label>
+        <select id="rangosMotivo">
+          <option value="asesoria">Cambio por asesoría</option>
+          <option value="cambio_producto">Cambio de producto</option>
+          <option value="otro">Otro</option>
+        </select>
+      </div>
+      <div class="filter-group" style="margin-top:8px;">
+        <label>Detalle (obligatorio si es "Otro")</label>
+        <input type="text" id="rangosMotivoDetalle" placeholder="Ej: ajuste según análisis de suelo">
+      </div>
+      <div style="display:flex;gap:8px;margin-top:16px;">
+        <button class="graf-btn" onclick="guardarRangos()">Guardar cambios</button>
+        <button class="graf-btn" onclick="cerrarModalRangos()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: HISTORIAL DE RANGOS -->
+  <div class="modal-overlay" id="historialModal">
+    <div class="modal-box">
+      <h3>Historial de cambios de rangos</h3>
+      <div id="historialLista"></div>
+      <div style="margin-top:16px;">
+        <button class="graf-btn" onclick="cerrarModalHistorial()">Cerrar</button>
       </div>
     </div>
   </div>
@@ -440,6 +539,10 @@
     <br>
     <div class="card">
       <div class="card-title">📏 Rangos de referencia</div>
+      <div style="display:flex;gap:8px;margin-bottom:14px;">
+        <button class="graf-btn" onclick="abrirModalRangos()">⚙️ Editar rangos de referencia</button>
+        <button class="graf-btn" onclick="abrirHistorialRangos()">📜 Historial de cambios</button>
+      </div>
       <table>
         <thead>
           <tr>
@@ -449,13 +552,8 @@
             <th>Alerta Alta</th>
           </tr>
         </thead>
-        <tbody>
-          <tr><td>pH</td><td>5.5 — 6.5</td><td style="color:var(--warn)">&lt; 5.0</td><td style="color:var(--danger)">&gt; 7.0</td></tr>
-          <tr><td>CE (dS/m)</td><td>1.2 — 1.8</td><td style="color:var(--warn)">&lt; 0.8</td><td style="color:var(--danger)">&gt; 2.5</td></tr>
-          <tr><td>Nitratos (mg/L)</td><td>100 — 200</td><td style="color:var(--warn)">&lt; 50</td><td style="color:var(--danger)">&gt; 300</td></tr>
-          <tr><td>Potasio (mg/L)</td><td>150 — 300</td><td style="color:var(--warn)">&lt; 100</td><td style="color:var(--danger)">&gt; 400</td></tr>
-          <tr><td>Calcio (mg/L)</td><td>100 — 200</td><td style="color:var(--warn)">&lt; 80</td><td style="color:var(--danger)">&gt; 250</td></tr>
-          <tr><td>Sodio (mg/L)</td><td>&lt; 50</td><td>—</td><td style="color:var(--danger)">&gt; 100</td></tr>
+        <tbody id="tablaRangos">
+          <tr><td colspan="4" class="empty">Cargando...</td></tr>
         </tbody>
       </table>
     </div>
@@ -464,10 +562,19 @@
   <!-- TAB: REGISTROS -->
   <div id="tab-registros" class="tab-content">
     <div class="card">
-      <div class="card-title">📋 Todos los registros</div>
+      <div class="card-title">📋 Registros</div>
+      <div class="filter-group" style="max-width:220px;margin-bottom:14px;">
+        <label>Ver medición</label>
+        <select id="tipoRegistroSelect" onchange="renderTabla()">
+          <option value="">Todos</option>
+          <option value="Goteo">Goteo</option>
+          <option value="Drenaje">Drenaje</option>
+          <option value="Humedad">Humedad</option>
+        </select>
+      </div>
       <div class="table-wrap">
         <table id="tablaRegistros">
-          <thead>
+          <thead id="tablaRegistrosHead">
             <tr>
               <th>Tipo</th>
               <th>Fecha</th>
@@ -494,10 +601,20 @@
 
 <script>
 // ── CONFIGURACIÓN ────────────────────────────────────────────────────────────
-const SHEETS_URL = "https://script.google.com/macros/s/AKfycbydce4hOCVAFuxP5KHtxutF0sPW7M9zdElCPKUzcLZRmkhkvkNxrhowhkIAdClhPBHI/exec";
-const PROXY = "https://api.allorigins.win/get?url=";
+// ── FIREBASE ──────────────────────────────────────────────────────────────
+// Nota: este objeto no es secreto, la seguridad real la dan las Reglas de Firestore.
+const firebaseConfig = {
+  apiKey: "AIzaSyA-MMd6KpsXegvsvyxm45nU-uHqi3Cr_po",
+  authDomain: "agromonitor-prod.firebaseapp.com",
+  projectId: "agromonitor-prod",
+  storageBucket: "agromonitor-prod.firebasestorage.app",
+  messagingSenderId: "1087646721837",
+  appId: "1:1087646721837:web:de60783451b076f89f15a4",
+  measurementId: "G-VMLEM70QTV"
+};
+const DOMINIO_LOGIN = "agromonitor.local"; // el usuario escribe "juan.perez", acá se arma juan.perez@agromonitor.local
 
-const RANGOS = {
+const RANGOS_DEFAULT = {
   pH:       { min: 5.5, max: 6.5, alerta_baja: 5.0, alerta_alta: 7.0 },
   CE:       { min: 1.2, max: 1.8, alerta_baja: 0.8, alerta_alta: 2.5 },
   Nitratos: { min: 100, max: 200, alerta_baja: 50,  alerta_alta: 300 },
@@ -505,28 +622,30 @@ const RANGOS = {
   Calcio:   { min: 100, max: 200, alerta_baja: 80,  alerta_alta: 250 },
   Sodio:    { min: 0,   max: 50,  alerta_baja: null, alerta_alta: 100 },
 };
+let RANGOS = JSON.parse(JSON.stringify(RANGOS_DEFAULT)); // se sobreescribe con Firestore al cargar
+let ME = { uid: null, nombre: '' }; // datos del usuario logueado, para trazabilidad
 
 let DATOS = [];
 let FILTRADOS = [];
 let charts = {};
 
-// ── CARGAR DATOS ─────────────────────────────────────────────────────────────
+// ── CARGAR DATOS (desde Firestore) ──────────────────────────────────────────
 async function cargarDatos() {
   document.getElementById('lastUpdate').textContent = 'Actualizando...';
   try {
-    const res = await fetch(SHEETS_URL, { method: 'GET', redirect: 'follow' });
-    const text = await res.text();
-    const data = JSON.parse(text);
-    if (data.status === 'ok') {
-      // Normalizar fechas
-      DATOS = (data.registros || []).map(r => ({
+    const snap = await FB.getDocs(FB.collection(FB.db, 'mediciones'));
+    DATOS = snap.docs.map(doc => {
+      const r = doc.data();
+      const fechaJS = r.fecha && r.fecha.toDate ? r.fecha.toDate() : r.fecha;
+      return {
         ...r,
-        fecha: normalizarFecha(r.fecha)
-      }));
-      aplicarFiltros();
-      document.getElementById('lastUpdate').textContent = 
-        'Actualizado: ' + new Date().toLocaleTimeString('es-CL');
-    }
+        trabajador: r.trabajador_nombre || '',
+        fecha: normalizarFecha(fechaJS)
+      };
+    });
+    aplicarFiltros();
+    document.getElementById('lastUpdate').textContent =
+      'Actualizado: ' + new Date().toLocaleTimeString('es-CL');
   } catch(e) {
     document.getElementById('lastUpdate').textContent = 'Error al cargar datos';
     console.error('Error:', e);
@@ -565,7 +684,10 @@ function aplicarFiltros() {
   renderTabla();
   renderGraficos();
   renderAlertas();
+  renderTablaRangos();
 }
+
+function renderTodo() { aplicarFiltros(); }
 
 function limpiarFiltros() {
   ['filtroTipo','filtroEquipo','filtroSector','filtroDesde','filtroHasta']
@@ -597,7 +719,127 @@ function renderKPIs() {
   `;
 }
 
-// ── SEMÁFORO ──────────────────────────────────────────────────────────────────
+// ── RANGOS DE REFERENCIA (editables, con historial) ─────────────────────────
+async function cargarRangos() {
+  try {
+    const ref = FB.doc(FB.db, 'configuracion', 'rangos_referencia');
+    const snap = await FB.getDoc(ref);
+    if (snap.exists()) {
+      RANGOS = snap.data().valores || RANGOS;
+    } else {
+      // Primera vez: se crea el documento con los valores por defecto
+      await FB.setDoc(ref, { valores: RANGOS_DEFAULT });
+      RANGOS = JSON.parse(JSON.stringify(RANGOS_DEFAULT));
+    }
+  } catch (e) {
+    console.error('Error cargando rangos, se usan los valores por defecto:', e);
+  }
+}
+
+function abrirModalRangos() {
+  const cont = document.getElementById('rangosForm');
+  cont.innerHTML = Object.keys(RANGOS).map(p => `
+    <div class="rangos-row">
+      <div class="rangos-param">${p}</div>
+      <label>Mín <input type="number" step="any" id="r_${p}_min" value="${RANGOS[p].min ?? ''}"></label>
+      <label>Máx <input type="number" step="any" id="r_${p}_max" value="${RANGOS[p].max ?? ''}"></label>
+      <label>Alerta baja <input type="number" step="any" id="r_${p}_alerta_baja" value="${RANGOS[p].alerta_baja ?? ''}"></label>
+      <label>Alerta alta <input type="number" step="any" id="r_${p}_alerta_alta" value="${RANGOS[p].alerta_alta ?? ''}"></label>
+    </div>`).join('');
+  document.getElementById('rangosMotivo').value = 'asesoria';
+  document.getElementById('rangosMotivoDetalle').value = '';
+  document.getElementById('rangosModal').style.display = 'flex';
+}
+
+function cerrarModalRangos() {
+  document.getElementById('rangosModal').style.display = 'none';
+}
+
+async function guardarRangos() {
+  const nuevos = {};
+  const cambios = [];
+  Object.keys(RANGOS).forEach(p => {
+    const min = parseFloat(document.getElementById(`r_${p}_min`).value);
+    const max = parseFloat(document.getElementById(`r_${p}_max`).value);
+    const ab  = document.getElementById(`r_${p}_alerta_baja`).value;
+    const aa  = document.getElementById(`r_${p}_alerta_alta`).value;
+    nuevos[p] = {
+      min, max,
+      alerta_baja: ab === '' ? null : parseFloat(ab),
+      alerta_alta: aa === '' ? null : parseFloat(aa),
+    };
+    ['min','max','alerta_baja','alerta_alta'].forEach(campo => {
+      const antes = RANGOS[p][campo];
+      const despues = nuevos[p][campo];
+      if (antes !== despues) {
+        cambios.push({ parametro: p, campo, valor_anterior: antes ?? null, valor_nuevo: despues ?? null });
+      }
+    });
+  });
+
+  const motivo = document.getElementById('rangosMotivo').value;
+  const detalle = document.getElementById('rangosMotivoDetalle').value.trim();
+
+  if (!cambios.length) { cerrarModalRangos(); return; }
+  if (motivo === 'otro' && !detalle) {
+    alert('Contá brevemente el motivo del cambio.');
+    return;
+  }
+
+  try {
+    await FB.setDoc(FB.doc(FB.db, 'configuracion', 'rangos_referencia'), { valores: nuevos });
+    for (const c of cambios) {
+      await FB.addDoc(FB.collection(FB.db, 'rangos_historial'), {
+        ...c,
+        motivo,
+        motivo_detalle: detalle || null,
+        usuario_uid: ME.uid,
+        usuario_nombre: ME.nombre || '(sin nombre)',
+        fecha: FB.serverTimestamp(),
+      });
+    }
+    RANGOS = nuevos;
+    cerrarModalRangos();
+    renderTodo();
+    alert('Rangos actualizados.');
+  } catch (e) {
+    console.error(e);
+    alert('No se pudo guardar. Revisá tu conexión e intentá de nuevo.');
+  }
+}
+
+async function abrirHistorialRangos() {
+  const cont = document.getElementById('historialLista');
+  cont.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  document.getElementById('historialModal').style.display = 'flex';
+  try {
+    const q = FB.query(FB.collection(FB.db, 'rangos_historial'), FB.orderBy('fecha', 'desc'));
+    const snap = await FB.getDocs(q);
+    if (snap.empty) {
+      cont.innerHTML = '<div class="empty">Todavía no hay cambios registrados.</div>';
+      return;
+    }
+    const motivoTexto = { asesoria: 'Cambio por asesoría', cambio_producto: 'Cambio de producto', otro: 'Otro' };
+    cont.innerHTML = snap.docs.map(d => {
+      const h = d.data();
+      const f = h.fecha && h.fecha.toDate ? h.fecha.toDate().toLocaleString('es-CL') : '—';
+      return `<div class="hist-row">
+        <div><b>${h.parametro}</b> · ${h.campo}: ${h.valor_anterior ?? '—'} → ${h.valor_nuevo ?? '—'}</div>
+        <div class="hist-meta">${motivoTexto[h.motivo] || h.motivo}${h.motivo_detalle ? ' — ' + h.motivo_detalle : ''}</div>
+        <div class="hist-meta">${h.usuario_nombre || '—'} · ${f}</div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    console.error(e);
+    cont.innerHTML = '<div class="empty">Error al cargar el historial.</div>';
+  }
+}
+
+function cerrarModalHistorial() {
+  document.getElementById('historialModal').style.display = 'none';
+}
+
+
 function getEstado(param, valor) {
   const r = RANGOS[param];
   if (!r || valor === '' || valor === null || valor === undefined) return null;
@@ -620,10 +862,23 @@ function semItem(param, valor) {
   </div>`;
 }
 
+function humItem(nombre, valor) {
+  const v = valor !== undefined && valor !== null && valor !== '' ? valor : '—';
+  return `<div class="sem-item">
+    <div class="sem-name">${nombre}</div>
+    <div class="sem-value">${v}</div>
+  </div>`;
+}
+
 function renderSemaforos() {
   const params = ['pH','CE','Nitratos','Potasio','Calcio','Sodio'];
   const ultGoteo   = FILTRADOS.filter(r => r.tipo === 'Goteo').slice(-1)[0];
   const ultDrenaje = FILTRADOS.filter(r => r.tipo === 'Drenaje').slice(-1)[0];
+  const ultHumedad = FILTRADOS.filter(r => r.tipo === 'Humedad').slice(-1)[0];
+
+  document.getElementById('fechaGoteo').textContent = ultGoteo ? `Último registro: ${ultGoteo.fecha}` : '';
+  document.getElementById('fechaDrenaje').textContent = ultDrenaje ? `Último registro: ${ultDrenaje.fecha}` : '';
+  document.getElementById('fechaHumedad').textContent = ultHumedad ? `Último registro: ${ultHumedad.fecha}` : '';
 
   document.getElementById('semaforoGoteo').innerHTML = ultGoteo
     ? params.map(p => semItem(p, ultGoteo[p])).join('')
@@ -632,29 +887,96 @@ function renderSemaforos() {
   document.getElementById('semaforoDrenaje').innerHTML = ultDrenaje
     ? params.map(p => semItem(p, ultDrenaje[p])).join('')
     : '<div class="empty">Sin registros de Drenaje</div>';
+
+  document.getElementById('semaforoHumedad').innerHTML = ultHumedad
+    ? [
+        humItem('Hilera', ultHumedad.hilera),
+        humItem('H. Inicial', ultHumedad.humedad_inicial),
+        humItem('H. Media', ultHumedad.humedad_media),
+        humItem('H. Final', ultHumedad.humedad_final),
+      ].join('')
+    : '<div class="empty">Sin registros de Humedad</div>';
+}
+
+// ── TABLA DE RANGOS (dinámica, refleja ediciones) ───────────────────────────
+function renderTablaRangos() {
+  const tbody = document.getElementById('tablaRangos');
+  if (!tbody) return;
+  const fmt = v => (v === null || v === undefined || v === '' ) ? '—' : v;
+  tbody.innerHTML = Object.keys(RANGOS).map(p => {
+    const r = RANGOS[p];
+    return `<tr>
+      <td>${p}</td>
+      <td>${fmt(r.min)} — ${fmt(r.max)}</td>
+      <td style="color:var(--warn)">${r.alerta_baja !== null && r.alerta_baja !== undefined ? '&lt; ' + r.alerta_baja : '—'}</td>
+      <td style="color:var(--danger)">${r.alerta_alta !== null && r.alerta_alta !== undefined ? '&gt; ' + r.alerta_alta : '—'}</td>
+    </tr>`;
+  }).join('');
 }
 
 // ── TABLA ─────────────────────────────────────────────────────────────────────
 function renderTabla() {
   const tbody = document.getElementById('tablaBody');
-  if (!FILTRADOS.length) {
-    tbody.innerHTML = '<tr><td colspan="11" class="empty">Sin registros</td></tr>';
+  const thead = document.getElementById('tablaRegistrosHead');
+  const tipoSel = document.getElementById('tipoRegistroSelect').value;
+
+  const registros = tipoSel ? FILTRADOS.filter(r => r.tipo === tipoSel) : FILTRADOS;
+
+  if (tipoSel === 'Humedad') {
+    thead.innerHTML = `<tr><th>Fecha</th><th>Trabajador</th><th>Equipo</th><th>Sector</th><th>Hilera</th><th>H. Inicial</th><th>H. Media</th><th>H. Final</th></tr>`;
+  } else if (tipoSel === 'Goteo' || tipoSel === 'Drenaje') {
+    thead.innerHTML = `<tr><th>Fecha</th><th>Trabajador</th><th>Equipo</th><th>Sector</th><th>pH</th><th>CE</th><th>Nitratos</th><th>Potasio</th><th>Calcio</th><th>Sodio</th></tr>`;
+  } else {
+    thead.innerHTML = `<tr><th>Tipo</th><th>Fecha</th><th>Trabajador</th><th>Equipo</th><th>Sector</th><th>pH / Hilera</th><th>CE / H.Inicial</th><th>Nitratos / H.Media</th><th>Potasio / H.Final</th><th>Calcio</th><th>Sodio</th></tr>`;
+  }
+
+  if (!registros.length) {
+    tbody.innerHTML = `<tr><td colspan="11" class="empty">Sin registros</td></tr>`;
     return;
   }
-  tbody.innerHTML = [...FILTRADOS].reverse().map(r => {
+
+  tbody.innerHTML = [...registros].reverse().map(r => {
     const tipo = r.tipo || '—';
-    const badgeClass = tipo === 'Goteo' ? 'badge-goteo' : tipo === 'Drenaje' ? 'badge-drenaje' : 'badge-humedad';
     const isHumedad = tipo === 'Humedad';
+
+    if (tipoSel === 'Humedad') {
+      return `<tr>
+        <td>${r.fecha || '—'}</td>
+        <td>${(r.trabajador || '—').split(' ')[0]}</td>
+        <td>${r.equipo || '—'}</td>
+        <td>${r.sector || '—'}</td>
+        <td>${r.hilera ?? '—'}</td>
+        <td>${r.humedad_inicial ?? '—'}</td>
+        <td>${r.humedad_media ?? '—'}</td>
+        <td>${r.humedad_final ?? '—'}</td>
+      </tr>`;
+    }
+    if (tipoSel === 'Goteo' || tipoSel === 'Drenaje') {
+      return `<tr>
+        <td>${r.fecha || '—'}</td>
+        <td>${(r.trabajador || '—').split(' ')[0]}</td>
+        <td>${r.equipo || '—'}</td>
+        <td>${r.sector || '—'}</td>
+        <td>${fmtVal(r.pH,'pH')}</td>
+        <td>${fmtVal(r.CE,'CE')}</td>
+        <td>${fmtVal(r.Nitratos,'Nitratos')}</td>
+        <td>${fmtVal(r.Potasio,'Potasio')}</td>
+        <td>${fmtVal(r.Calcio,'Calcio')}</td>
+        <td>${fmtVal(r.Sodio,'Sodio')}</td>
+      </tr>`;
+    }
+    // Vista "Todos"
+    const badgeClass = tipo === 'Goteo' ? 'badge-goteo' : tipo === 'Drenaje' ? 'badge-drenaje' : 'badge-humedad';
     return `<tr>
       <td><span class="badge ${badgeClass}">${tipo}</span></td>
       <td>${r.fecha || '—'}</td>
       <td>${(r.trabajador || '—').split(' ')[0]}</td>
       <td>${r.equipo || '—'}</td>
       <td>${r.sector || '—'}</td>
-      <td>${isHumedad ? (r.hilera || '—') : fmtVal(r.pH,'pH')}</td>
-      <td>${isHumedad ? (r.humedad_inicial !== undefined ? r.humedad_inicial : '—') : fmtVal(r.CE,'CE')}</td>
-      <td>${isHumedad ? (r.humedad_media !== undefined ? r.humedad_media : '—') : fmtVal(r.Nitratos,'Nitratos')}</td>
-      <td>${isHumedad ? (r.humedad_final !== undefined ? r.humedad_final : '—') : fmtVal(r.Potasio,'Potasio')}</td>
+      <td>${isHumedad ? (r.hilera ?? '—') : fmtVal(r.pH,'pH')}</td>
+      <td>${isHumedad ? (r.humedad_inicial ?? '—') : fmtVal(r.CE,'CE')}</td>
+      <td>${isHumedad ? (r.humedad_media ?? '—') : fmtVal(r.Nitratos,'Nitratos')}</td>
+      <td>${isHumedad ? (r.humedad_final ?? '—') : fmtVal(r.Potasio,'Potasio')}</td>
       <td>${isHumedad ? '—' : fmtVal(r.Calcio,'Calcio')}</td>
       <td>${isHumedad ? '—' : fmtVal(r.Sodio,'Sodio')}</td>
     </tr>`;
@@ -899,8 +1221,10 @@ function descargarExcel() {
 }
 
 // ── INICIO ────────────────────────────────────────────────────────────────────
-cargarDatos();
-setInterval(cargarDatos, 15 * 60 * 1000); // Auto-actualiza cada 15 min
+function iniciarApp() {
+  cargarDatos();
+  setInterval(cargarDatos, 15 * 60 * 1000); // Auto-actualiza cada 15 min
+}
 
 // Fechas por defecto - desde hace 30 dias hasta hoy
 const hoy = new Date().toISOString().split('T')[0];
@@ -909,6 +1233,82 @@ hace30.setDate(hace30.getDate() - 30);
 const hace30str = hace30.toISOString().split('T')[0];
 document.getElementById('filtroHasta').value = hoy;
 document.getElementById('filtroDesde').value = hace30str;
+</script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+  import {
+    getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut
+  } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+  import {
+    getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, query, orderBy, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  // Exponemos lo necesario para que el resto del script (fuera del módulo) lo use
+  window.FB = { auth, db, collection, getDocs, doc, getDoc, setDoc, addDoc, query, orderBy, serverTimestamp };
+
+  const overlay   = document.getElementById('loginOverlay');
+  const header    = document.getElementById('appHeader');
+  const container = document.getElementById('appContainer');
+  const loginBtn  = document.getElementById('loginBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const errorBox  = document.getElementById('loginError');
+
+  function mostrarDashboard() {
+    overlay.style.display = 'none';
+    header.style.display = '';
+    container.style.display = '';
+  }
+  function mostrarLogin() {
+    overlay.style.display = 'flex';
+    header.style.display = 'none';
+    container.style.display = 'none';
+  }
+
+  loginBtn.addEventListener('click', async () => {
+    const userInput = document.getElementById('loginUser').value.trim();
+    const pass = document.getElementById('loginPass').value;
+    errorBox.textContent = '';
+    if (!userInput || !pass) {
+      errorBox.textContent = 'Completá usuario y contraseña.';
+      return;
+    }
+    const email = userInput.includes('@') ? userInput : `${userInput}@${DOMINIO_LOGIN}`;
+    try {
+      await signInWithEmailAndPassword(auth, email, pass);
+    } catch (e) {
+      errorBox.textContent = 'Usuario o contraseña incorrectos.';
+      console.error(e);
+    }
+  });
+
+  logoutBtn.addEventListener('click', () => signOut(auth));
+
+  // Permite iniciar sesión con Enter
+  document.getElementById('loginPass').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') loginBtn.click();
+  });
+
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      mostrarDashboard();
+      ME.uid = user.uid;
+      try {
+        const perfilSnap = await getDoc(doc(db, 'usuarios', user.uid));
+        ME.nombre = perfilSnap.exists() ? (perfilSnap.data().nombre || '') : '';
+      } catch (e) {
+        ME.nombre = '';
+      }
+      await cargarRangos();
+      if (typeof iniciarApp === 'function') iniciarApp();
+    } else {
+      mostrarLogin();
+    }
+  });
 </script>
 </body>
 </html>
