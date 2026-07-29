@@ -219,6 +219,7 @@
     .badge-goteo   { background: #4caf5022; color: var(--ok); }
     .badge-drenaje { background: #9c27b022; color: #ce93d8; }
     .badge-humedad { background: #ffd54f22; color: var(--warn); }
+    .badge-pctdrenaje { background: #42a5f522; color: #42a5f5; }
 
     /* ALERTAS */
     .alert-item {
@@ -424,6 +425,13 @@
           <div class="empty">Sin datos</div>
         </div>
       </div>
+      <div class="card">
+        <div class="card-title">📉 Últimos valores — % Drenaje</div>
+        <div class="ult-fecha" id="fechaPctDrenaje"></div>
+        <div class="semaforo-grid" id="semaforoPctDrenaje">
+          <div class="empty">Sin datos</div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -462,18 +470,53 @@
     </div>
   </div>
 
+  <!-- MODAL: EDITAR OBJETIVOS DE GOTEO -->
+  <div class="modal-overlay" id="objetivosModal">
+    <div class="modal-box">
+      <h3>Editar objetivos de Goteo</h3>
+      <div style="color:var(--muted);font-size:12px;margin-bottom:14px;">
+        Valor de referencia definido por el asesor. Se dibuja como línea de objetivo en cada gráfico — no afecta el color de alerta.
+      </div>
+      <div id="objetivosForm"></div>
+      <div style="display:flex;gap:8px;margin-top:16px;">
+        <button class="graf-btn" onclick="guardarObjetivos()">Guardar cambios</button>
+        <button class="graf-btn" onclick="cerrarModalObjetivos()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- TAB: GRÁFICOS -->
   <div id="tab-graficos" class="tab-content">
     <!-- Selector de vista -->
-    <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
-      <button class="graf-btn active" onclick="setGrafView('goteo',this)">💧 Goteo</button>
-      <button class="graf-btn" onclick="setGrafView('drenaje',this)">🚿 Drenaje</button>
-      <button class="graf-btn" onclick="setGrafView('humedad',this)">🌱 Humedad</button>
-      <button class="graf-btn" onclick="setGrafView('general',this)">📊 General</button>
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center;justify-content:space-between;">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="graf-btn active" onclick="setGrafView('goteo',this)">💧 Goteo</button>
+        <button class="graf-btn" onclick="setGrafView('drenaje',this)">🚿 Drenaje</button>
+        <button class="graf-btn" onclick="setGrafView('humedad',this)">🌱 Humedad</button>
+        <button class="graf-btn" onclick="setGrafView('general',this)">📊 General</button>
+        <button class="graf-btn" onclick="setGrafView('pctdrenaje',this)">📉 % Drenaje</button>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <div class="filter-group" style="max-width:200px;">
+          <label>Mes (solo gráficos)</label>
+          <select id="grafMesSelect" onchange="cambiarGrafMes()">
+            <option value="">Todos los meses</option>
+          </select>
+        </div>
+        <div class="filter-group" style="max-width:220px;">
+          <label>Sector (solo gráficos)</label>
+          <select id="grafSectorSelect" onchange="cambiarGrafSector()">
+            <option value="">Todos los sectores</option>
+          </select>
+        </div>
+      </div>
     </div>
 
     <!-- Vista Goteo / Drenaje -->
     <div id="grafView-goteo" class="graf-view">
+      <div style="margin-bottom:14px;">
+        <button class="graf-btn" onclick="abrirModalObjetivos()">✏️ Editar objetivos de Goteo</button>
+      </div>
       <div class="grid2">
         <div class="card"><div class="card-title">📅 Registros por día</div><div class="chart-container"><canvas id="chartGoteoDias"></canvas></div></div>
         <div class="card"><div class="card-title">🗺️ Top sectores</div><div class="chart-container"><canvas id="chartGoteoSectores"></canvas></div></div>
@@ -526,6 +569,15 @@
         <div class="card"><div class="card-title">🔢 Distribución por tipo</div><div class="chart-container"><canvas id="chartGeneralTipos"></canvas></div></div>
       </div>
     </div>
+
+    <!-- Vista % Drenaje -->
+    <div id="grafView-pctdrenaje" class="graf-view" style="display:none">
+      <div class="grid2">
+        <div class="card"><div class="card-title">📅 Registros por día</div><div class="chart-container"><canvas id="chartPctDrenajeDias"></canvas></div></div>
+        <div class="card"><div class="card-title">🗺️ Top sectores</div><div class="chart-container"><canvas id="chartPctDrenajeSectores"></canvas></div></div>
+      </div>
+      <div class="card"><div class="card-title">📈 % Drenaje promedio</div><div class="chart-container" style="height:220px"><canvas id="chartPctDrenajeValor"></canvas></div></div>
+    </div>
   </div>
 
   <!-- TAB: ALERTAS -->
@@ -563,14 +615,23 @@
   <div id="tab-registros" class="tab-content">
     <div class="card">
       <div class="card-title">📋 Registros</div>
-      <div class="filter-group" style="max-width:220px;margin-bottom:14px;">
-        <label>Ver medición</label>
-        <select id="tipoRegistroSelect" onchange="renderTabla()">
-          <option value="">Todos</option>
-          <option value="Goteo">Goteo</option>
-          <option value="Drenaje">Drenaje</option>
-          <option value="Humedad">Humedad</option>
-        </select>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
+        <div class="filter-group" style="max-width:220px;">
+          <label>Ver medición</label>
+          <select id="tipoRegistroSelect" onchange="renderTabla()">
+            <option value="">Todos</option>
+            <option value="Goteo">Goteo</option>
+            <option value="Drenaje">Drenaje</option>
+            <option value="Humedad">Humedad</option>
+            <option value="PorcentajeDrenaje">% Drenaje</option>
+          </select>
+        </div>
+        <div class="filter-group" style="max-width:200px;">
+          <label>Mes</label>
+          <select id="regMesSelect" onchange="cambiarRegMes()">
+            <option value="">Todos los meses</option>
+          </select>
+        </div>
       </div>
       <div class="table-wrap">
         <table id="tablaRegistros">
@@ -621,9 +682,18 @@ const RANGOS_DEFAULT = {
   Potasio:  { min: 150, max: 300, alerta_baja: 100, alerta_alta: 400 },
   Calcio:   { min: 100, max: 200, alerta_baja: 80,  alerta_alta: 250 },
   Sodio:    { min: 0,   max: 50,  alerta_baja: null, alerta_alta: 100 },
+  PorcentajeDrenaje: { min: 30, max: 40, alerta_baja: 20, alerta_alta: 50 },
 };
 let RANGOS = JSON.parse(JSON.stringify(RANGOS_DEFAULT)); // se sobreescribe con Firestore al cargar
 let ME = { uid: null, nombre: '' }; // datos del usuario logueado, para trazabilidad
+
+// Nombres legibles para parámetros cuyo id interno no es el nombre a mostrar
+const NOMBRE_PARAM = { PorcentajeDrenaje: '% Drenaje' };
+function nombreParam(p) { return NOMBRE_PARAM[p] || p; }
+
+// Objetivos de Goteo (líneas de referencia en los gráficos, no afectan el color de alerta)
+const OBJETIVOS_GOTEO_DEFAULT = { pH: 6.0, CE: 1.6, Nitratos: 665, Potasio: 209, Calcio: 89, Sodio: null };
+let OBJETIVOS_GOTEO = JSON.parse(JSON.stringify(OBJETIVOS_GOTEO_DEFAULT));
 
 let DATOS = [];
 let FILTRADOS = [];
@@ -681,6 +751,9 @@ function aplicarFiltros() {
   });
 
   actualizarSectores();
+  actualizarGrafSectores();
+  actualizarGrafMeses();
+  actualizarRegMeses();
   renderKPIs();
   renderSemaforos();
   renderTabla();
@@ -738,11 +811,60 @@ async function cargarRangos() {
   }
 }
 
+// ── OBJETIVOS DE GOTEO (líneas de referencia en gráficos, editables sin historial) ──
+async function cargarObjetivosGoteo() {
+  try {
+    const ref = FB.doc(FB.db, 'configuracion', 'objetivos_goteo');
+    const snap = await FB.getDoc(ref);
+    if (snap.exists()) {
+      OBJETIVOS_GOTEO = snap.data().valores || OBJETIVOS_GOTEO;
+    } else {
+      await FB.setDoc(ref, { valores: OBJETIVOS_GOTEO_DEFAULT });
+      OBJETIVOS_GOTEO = JSON.parse(JSON.stringify(OBJETIVOS_GOTEO_DEFAULT));
+    }
+  } catch (e) {
+    console.error('Error cargando objetivos de Goteo, se usan los valores por defecto:', e);
+  }
+}
+
+function abrirModalObjetivos() {
+  const cont = document.getElementById('objetivosForm');
+  const params = ['pH','CE','Nitratos','Potasio','Calcio','Sodio'];
+  cont.innerHTML = params.map(p => `
+    <div class="rangos-row" style="grid-template-columns:90px 1fr;">
+      <div class="rangos-param">${p}</div>
+      <label>Valor objetivo <input type="number" step="any" id="obj_${p}" value="${OBJETIVOS_GOTEO[p] ?? ''}" placeholder="Sin definir"></label>
+    </div>`).join('');
+  document.getElementById('objetivosModal').style.display = 'flex';
+}
+
+function cerrarModalObjetivos() {
+  document.getElementById('objetivosModal').style.display = 'none';
+}
+
+async function guardarObjetivos() {
+  const params = ['pH','CE','Nitratos','Potasio','Calcio','Sodio'];
+  const nuevos = {};
+  params.forEach(p => {
+    const v = document.getElementById(`obj_${p}`).value;
+    nuevos[p] = v === '' ? null : parseFloat(v);
+  });
+  try {
+    await FB.setDoc(FB.doc(FB.db, 'configuracion', 'objetivos_goteo'), { valores: nuevos });
+    OBJETIVOS_GOTEO = nuevos;
+    cerrarModalObjetivos();
+    renderGraficos();
+  } catch (e) {
+    console.error(e);
+    alert('No se pudo guardar. Revisá tu conexión e intentá de nuevo.');
+  }
+}
+
 function abrirModalRangos() {
   const cont = document.getElementById('rangosForm');
   cont.innerHTML = Object.keys(RANGOS).map(p => `
     <div class="rangos-row">
-      <div class="rangos-param">${p}</div>
+      <div class="rangos-param">${nombreParam(p)}</div>
       <label>Mín <input type="number" step="any" id="r_${p}_min" value="${RANGOS[p].min ?? ''}"></label>
       <label>Máx <input type="number" step="any" id="r_${p}_max" value="${RANGOS[p].max ?? ''}"></label>
       <label>Alerta baja <input type="number" step="any" id="r_${p}_alerta_baja" value="${RANGOS[p].alerta_baja ?? ''}"></label>
@@ -858,7 +980,7 @@ function semItem(param, valor) {
   const v = valor !== '' && valor !== null && valor !== undefined ? parseFloat(valor).toFixed(2) : '—';
   const badge = estado ? `<div class="sem-badge badge-${estado}">${estado === 'ok' ? '✓ OK' : estado === 'warn' ? '⚠ ALERTA' : '✕ FUERA'}</div>` : '';
   return `<div class="sem-item">
-    <div class="sem-name">${param}</div>
+    <div class="sem-name">${nombreParam(param)}</div>
     <div class="sem-value ${estado || ''}">${v}</div>
     ${badge}
   </div>`;
@@ -877,11 +999,13 @@ function renderSemaforos() {
   const ultGoteo   = FILTRADOS.filter(r => r.tipo === 'Goteo').slice(-1)[0];
   const ultDrenaje = FILTRADOS.filter(r => r.tipo === 'Drenaje').slice(-1)[0];
   const ultHumedad = FILTRADOS.filter(r => r.tipo === 'Humedad').slice(-1)[0];
+  const ultPctDrenaje = FILTRADOS.filter(r => r.tipo === 'PorcentajeDrenaje').slice(-1)[0];
 
   const fmtFechaHora = r => r.hora ? `Último registro: ${r.fecha} · ${r.hora}` : `Último registro: ${r.fecha}`;
   document.getElementById('fechaGoteo').textContent = ultGoteo ? fmtFechaHora(ultGoteo) : '';
   document.getElementById('fechaDrenaje').textContent = ultDrenaje ? fmtFechaHora(ultDrenaje) : '';
   document.getElementById('fechaHumedad').textContent = ultHumedad ? fmtFechaHora(ultHumedad) : '';
+  document.getElementById('fechaPctDrenaje').textContent = ultPctDrenaje ? fmtFechaHora(ultPctDrenaje) : '';
 
   document.getElementById('semaforoGoteo').innerHTML = ultGoteo
     ? params.map(p => semItem(p, ultGoteo[p])).join('')
@@ -899,6 +1023,10 @@ function renderSemaforos() {
         humItem('H. Final', ultHumedad.humedad_final),
       ].join('')
     : '<div class="empty">Sin registros de Humedad</div>';
+
+  document.getElementById('semaforoPctDrenaje').innerHTML = ultPctDrenaje
+    ? semItem('PorcentajeDrenaje', ultPctDrenaje.PorcentajeDrenaje)
+    : '<div class="empty">Sin registros de % Drenaje</div>';
 }
 
 // ── TABLA DE RANGOS (dinámica, refleja ediciones) ───────────────────────────
@@ -909,7 +1037,7 @@ function renderTablaRangos() {
   tbody.innerHTML = Object.keys(RANGOS).map(p => {
     const r = RANGOS[p];
     return `<tr>
-      <td>${p}</td>
+      <td>${nombreParam(p)}</td>
       <td>${fmt(r.min)} — ${fmt(r.max)}</td>
       <td style="color:var(--warn)">${r.alerta_baja !== null && r.alerta_baja !== undefined ? '&lt; ' + r.alerta_baja : '—'}</td>
       <td style="color:var(--danger)">${r.alerta_alta !== null && r.alerta_alta !== undefined ? '&gt; ' + r.alerta_alta : '—'}</td>
@@ -923,24 +1051,38 @@ function renderTabla() {
   const thead = document.getElementById('tablaRegistrosHead');
   const tipoSel = document.getElementById('tipoRegistroSelect').value;
 
-  const registros = tipoSel ? FILTRADOS.filter(r => r.tipo === tipoSel) : FILTRADOS;
+  let registros = tipoSel ? FILTRADOS.filter(r => r.tipo === tipoSel) : FILTRADOS;
+  if (currentRegMes) registros = registros.filter(r => (r.fecha || '').slice(0, 7) === currentRegMes);
+
+  // Orden: por Sector primero, y dentro de cada sector por Hilera (Humedad) o por Hora (resto)
+  registros = [...registros].sort((a, b) => {
+    const sa = (a.sector || '').localeCompare(b.sector || '', 'es', { numeric: true });
+    if (sa !== 0) return sa;
+    if (a.tipo === 'Humedad' || b.tipo === 'Humedad') {
+      return (a.hilera || 0) - (b.hilera || 0);
+    }
+    return (b.hora || '').localeCompare(a.hora || ''); // más reciente primero dentro del sector
+  });
 
   if (tipoSel === 'Humedad') {
     thead.innerHTML = `<tr><th>Fecha</th><th>Hora</th><th>Trabajador</th><th>Equipo</th><th>Sector</th><th>Hilera</th><th>H. Inicial</th><th>H. Media</th><th>H. Final</th></tr>`;
   } else if (tipoSel === 'Goteo' || tipoSel === 'Drenaje') {
     thead.innerHTML = `<tr><th>Fecha</th><th>Hora</th><th>Trabajador</th><th>Equipo</th><th>Sector</th><th>pH</th><th>CE</th><th>Nitratos</th><th>Potasio</th><th>Calcio</th><th>Sodio</th></tr>`;
+  } else if (tipoSel === 'PorcentajeDrenaje') {
+    thead.innerHTML = `<tr><th>Fecha</th><th>Hora</th><th>Trabajador</th><th>Equipo</th><th>Sector</th><th>% Drenaje</th></tr>`;
   } else {
-    thead.innerHTML = `<tr><th>Tipo</th><th>Fecha</th><th>Hora</th><th>Trabajador</th><th>Equipo</th><th>Sector</th><th>pH / Hilera</th><th>CE / H.Inicial</th><th>Nitratos / H.Media</th><th>Potasio / H.Final</th><th>Calcio</th><th>Sodio</th></tr>`;
+    thead.innerHTML = `<tr><th>Tipo</th><th>Fecha</th><th>Hora</th><th>Trabajador</th><th>Equipo</th><th>Sector</th><th>pH / Hilera</th><th>CE / H.Inicial</th><th>Nitratos / H.Media</th><th>Potasio / H.Final</th><th>Calcio</th><th>Sodio</th><th>% Drenaje</th></tr>`;
   }
 
   if (!registros.length) {
-    tbody.innerHTML = `<tr><td colspan="12" class="empty">Sin registros</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="13" class="empty">Sin registros</td></tr>`;
     return;
   }
 
-  tbody.innerHTML = [...registros].reverse().map(r => {
+  tbody.innerHTML = registros.map(r => {
     const tipo = r.tipo || '—';
     const isHumedad = tipo === 'Humedad';
+    const isPctDrenaje = tipo === 'PorcentajeDrenaje';
 
     if (tipoSel === 'Humedad') {
       return `<tr>
@@ -970,21 +1112,33 @@ function renderTabla() {
         <td>${fmtVal(r.Sodio,'Sodio')}</td>
       </tr>`;
     }
+    if (tipoSel === 'PorcentajeDrenaje') {
+      return `<tr>
+        <td>${r.fecha || '—'}</td>
+        <td>${r.hora || '—'}</td>
+        <td>${(r.trabajador || '—').split(' ')[0]}</td>
+        <td>${r.equipo || '—'}</td>
+        <td>${r.sector || '—'}</td>
+        <td>${fmtVal(r.PorcentajeDrenaje,'PorcentajeDrenaje')}</td>
+      </tr>`;
+    }
     // Vista "Todos"
-    const badgeClass = tipo === 'Goteo' ? 'badge-goteo' : tipo === 'Drenaje' ? 'badge-drenaje' : 'badge-humedad';
+    const badgeClass = tipo === 'Goteo' ? 'badge-goteo' : tipo === 'Drenaje' ? 'badge-drenaje' : tipo === 'Humedad' ? 'badge-humedad' : 'badge-pctdrenaje';
+    const tipoLabel = isPctDrenaje ? '% Drenaje' : tipo;
     return `<tr>
-      <td><span class="badge ${badgeClass}">${tipo}</span></td>
+      <td><span class="badge ${badgeClass}">${tipoLabel}</span></td>
       <td>${r.fecha || '—'}</td>
       <td>${r.hora || '—'}</td>
       <td>${(r.trabajador || '—').split(' ')[0]}</td>
       <td>${r.equipo || '—'}</td>
       <td>${r.sector || '—'}</td>
-      <td>${isHumedad ? (r.hilera ?? '—') : fmtVal(r.pH,'pH')}</td>
-      <td>${isHumedad ? (r.humedad_inicial ?? '—') : fmtVal(r.CE,'CE')}</td>
-      <td>${isHumedad ? (r.humedad_media ?? '—') : fmtVal(r.Nitratos,'Nitratos')}</td>
-      <td>${isHumedad ? (r.humedad_final ?? '—') : fmtVal(r.Potasio,'Potasio')}</td>
-      <td>${isHumedad ? '—' : fmtVal(r.Calcio,'Calcio')}</td>
-      <td>${isHumedad ? '—' : fmtVal(r.Sodio,'Sodio')}</td>
+      <td>${isHumedad ? (r.hilera ?? '—') : isPctDrenaje ? '—' : fmtVal(r.pH,'pH')}</td>
+      <td>${isHumedad ? (r.humedad_inicial ?? '—') : isPctDrenaje ? '—' : fmtVal(r.CE,'CE')}</td>
+      <td>${isHumedad ? (r.humedad_media ?? '—') : isPctDrenaje ? '—' : fmtVal(r.Nitratos,'Nitratos')}</td>
+      <td>${isHumedad ? (r.humedad_final ?? '—') : isPctDrenaje ? '—' : fmtVal(r.Potasio,'Potasio')}</td>
+      <td>${(isHumedad || isPctDrenaje) ? '—' : fmtVal(r.Calcio,'Calcio')}</td>
+      <td>${(isHumedad || isPctDrenaje) ? '—' : fmtVal(r.Sodio,'Sodio')}</td>
+      <td>${isPctDrenaje ? fmtVal(r.PorcentajeDrenaje,'PorcentajeDrenaje') : '—'}</td>
     </tr>`;
   }).join('');
 }
@@ -1000,6 +1154,7 @@ function fmtVal(val, param) {
 
 // ── GRÁFICOS ──────────────────────────────────────────────────────────────────
 let currentGrafView = 'goteo';
+let currentGrafSector = '';
 
 function setGrafView(view, btn) {
   currentGrafView = view;
@@ -1008,6 +1163,69 @@ function setGrafView(view, btn) {
   document.querySelectorAll('.graf-view').forEach(v => v.style.display = 'none');
   document.getElementById('grafView-' + view).style.display = 'block';
   renderGraficos();
+}
+
+function cambiarGrafSector() {
+  currentGrafSector = document.getElementById('grafSectorSelect').value;
+  renderGraficos();
+}
+
+function actualizarGrafSectores() {
+  const sel = document.getElementById('grafSectorSelect');
+  if (!sel) return;
+  const valorActual = sel.value;
+  const sectores = [...new Set(DATOS.map(r => r.sector).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">Todos los sectores</option>' +
+    sectores.map(s => `<option value="${s}">${s}</option>`).join('');
+  // Mantener la selección previa si el sector sigue existiendo
+  if (sectores.includes(valorActual)) sel.value = valorActual;
+  else currentGrafSector = '';
+}
+
+// ── SELECTORES DE MES (independientes, uno para Gráficos y otro para Registros) ──
+const MESES_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+function nombreMes(ym) {
+  const [y, m] = ym.split('-');
+  return `${MESES_ES[parseInt(m, 10) - 1]} ${y}`;
+}
+
+function mesActual() {
+  const hoy = new Date();
+  return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function poblarSelectorMes(sel, valorPorDefecto) {
+  const mesesDisponibles = [...new Set(DATOS.map(r => (r.fecha || '').slice(0, 7)).filter(Boolean))]
+    .sort().reverse();
+  const valorActual = sel.dataset.inicializado ? sel.value : (mesesDisponibles.includes(valorPorDefecto) ? valorPorDefecto : '');
+  sel.innerHTML = '<option value="">Todos los meses</option>' +
+    mesesDisponibles.map(m => `<option value="${m}">${nombreMes(m)}</option>`).join('');
+  if (mesesDisponibles.includes(valorActual)) sel.value = valorActual;
+  sel.dataset.inicializado = '1';
+  return sel.value;
+}
+
+let currentGrafMes = '';
+function cambiarGrafMes() {
+  currentGrafMes = document.getElementById('grafMesSelect').value;
+  renderGraficos();
+}
+function actualizarGrafMeses() {
+  const sel = document.getElementById('grafMesSelect');
+  if (!sel) return;
+  currentGrafMes = poblarSelectorMes(sel, mesActual());
+}
+
+let currentRegMes = '';
+function cambiarRegMes() {
+  currentRegMes = document.getElementById('regMesSelect').value;
+  renderTabla();
+}
+function actualizarRegMeses() {
+  const sel = document.getElementById('regMesSelect');
+  if (!sel) return;
+  currentRegMes = poblarSelectorMes(sel, mesActual());
 }
 
 function mkChart(id, type, labels, datasets, opts = {}) {
@@ -1057,9 +1275,17 @@ function getLinea(data, param) {
 const COLORS = ['#4caf50','#81c784','#a5d6a7','#ce93d8','#42a5f5','#ffd54f','#ef5350','#26c6da'];
 
 function renderGraficos() {
-  const goteo   = FILTRADOS.filter(r => r.tipo === 'Goteo');
-  const drenaje = FILTRADOS.filter(r => r.tipo === 'Drenaje');
-  const humedad = FILTRADOS.filter(r => r.tipo === 'Humedad');
+  // Base local: respeta los filtros generales (FILTRADOS) + los selectores propios de esta pestaña
+  const base = FILTRADOS.filter(r => {
+    if (currentGrafSector && r.sector !== currentGrafSector) return false;
+    if (currentGrafMes && (r.fecha || '').slice(0, 7) !== currentGrafMes) return false;
+    return true;
+  });
+
+  const goteo       = base.filter(r => r.tipo === 'Goteo');
+  const drenaje     = base.filter(r => r.tipo === 'Drenaje');
+  const humedad     = base.filter(r => r.tipo === 'Humedad');
+  const pctDrenaje  = base.filter(r => r.tipo === 'PorcentajeDrenaje');
   const params  = ['pH','CE','Nitratos','Potasio','Calcio','Sodio'];
 
   if (currentGrafView === 'goteo') {
@@ -1067,7 +1293,15 @@ function renderGraficos() {
     mkChart('chartGoteoDias', 'bar', d.labels, [{ label: 'Registros', data: d.values, backgroundColor: '#4caf5066', borderColor: '#4caf50', borderWidth: 1 }]);
     const s = getSectores(goteo);
     mkChart('chartGoteoSectores', 'bar', s.labels, [{ label: 'Registros', data: s.values, backgroundColor: '#42a5f566', borderColor: '#42a5f5', borderWidth: 1 }], { indexAxis: 'y' });
-    params.forEach(p => { const l = getLinea(goteo, p); mkChart('chartGoteo'+p, 'line', l.labels, [{ label: p, data: l.values, borderColor: '#4caf50', backgroundColor: '#4caf5022', tension: 0.4, pointRadius: 3, fill: true }]); });
+    params.forEach(p => {
+      const l = getLinea(goteo, p);
+      const datasets = [{ label: p, data: l.values, borderColor: '#4caf50', backgroundColor: '#4caf5022', tension: 0.4, pointRadius: 3, fill: true }];
+      const obj = OBJETIVOS_GOTEO[p];
+      if (obj !== null && obj !== undefined && obj !== '' && l.labels.length) {
+        datasets.push({ label: 'Objetivo', data: l.labels.map(() => obj), borderColor: '#ff7043', backgroundColor: 'transparent', borderDash: [6,4], borderWidth: 2, pointRadius: 0, fill: false });
+      }
+      mkChart('chartGoteo'+p, 'line', l.labels, datasets);
+    });
   }
 
   if (currentGrafView === 'drenaje') {
@@ -1090,17 +1324,27 @@ function renderGraficos() {
     });
   }
 
+  if (currentGrafView === 'pctdrenaje') {
+    const d = getDias(pctDrenaje);
+    mkChart('chartPctDrenajeDias', 'bar', d.labels, [{ label: 'Registros', data: d.values, backgroundColor: '#42a5f566', borderColor: '#42a5f5', borderWidth: 1 }]);
+    const s = getSectores(pctDrenaje);
+    mkChart('chartPctDrenajeSectores', 'bar', s.labels, [{ label: 'Registros', data: s.values, backgroundColor: '#42a5f566', borderColor: '#42a5f5', borderWidth: 1 }], { indexAxis: 'y' });
+    const l = getLinea(pctDrenaje, 'PorcentajeDrenaje');
+    mkChart('chartPctDrenajeValor', 'line', l.labels, [{ label: '% Drenaje promedio', data: l.values, borderColor: '#42a5f5', backgroundColor: '#42a5f522', tension: 0.4, pointRadius: 3, fill: true }]);
+  }
+
   if (currentGrafView === 'general') {
     // Todos por dia
-    const d = getDias(FILTRADOS);
+    const d = getDias(base);
     mkChart('chartGeneralDias', 'bar', d.labels, [
       { label: 'Goteo',   data: d.labels.map(l => goteo.filter(r=>r.fecha===l).length),   backgroundColor: '#4caf5066', borderColor: '#4caf50', borderWidth:1 },
       { label: 'Drenaje', data: d.labels.map(l => drenaje.filter(r=>r.fecha===l).length), backgroundColor: '#ce93d866', borderColor: '#ce93d8', borderWidth:1 },
       { label: 'Humedad', data: d.labels.map(l => humedad.filter(r=>r.fecha===l).length), backgroundColor: '#ffd54f66', borderColor: '#ffd54f', borderWidth:1 },
+      { label: '% Drenaje', data: d.labels.map(l => pctDrenaje.filter(r=>r.fecha===l).length), backgroundColor: '#42a5f566', borderColor: '#42a5f5', borderWidth:1 },
     ]);
     // Por trabajador
     const trab = {};
-    FILTRADOS.forEach(r => { if(r.trabajador) trab[r.trabajador.split(' ')[0]] = (trab[r.trabajador.split(' ')[0]]||0)+1; });
+    base.forEach(r => { if(r.trabajador) trab[r.trabajador.split(' ')[0]] = (trab[r.trabajador.split(' ')[0]]||0)+1; });
     const tKeys = Object.keys(trab);
     mkChart('chartGeneralTrabajadores', 'bar', tKeys, [{ label: 'Registros', data: tKeys.map(k=>trab[k]), backgroundColor: COLORS }]);
     // Goteo vs Drenaje por sector
@@ -1111,8 +1355,8 @@ function renderGraficos() {
     ]);
     // Distribución por tipo
     mkChart('chartGeneralTipos', 'doughnut',
-      ['Goteo','Drenaje','Humedad'],
-      [{ data: [goteo.length, drenaje.length, humedad.length], backgroundColor: ['#4caf50','#ce93d8','#ffd54f'], borderWidth: 0 }]
+      ['Goteo','Drenaje','Humedad','% Drenaje'],
+      [{ data: [goteo.length, drenaje.length, humedad.length, pctDrenaje.length], backgroundColor: ['#4caf50','#ce93d8','#ffd54f','#42a5f5'], borderWidth: 0 }]
     );
   }
 }
@@ -1190,6 +1434,7 @@ async function descargarExcel() {
     goteo:   { header: 'FF2E7D32', text: 'FFFFFFFF', fila: 'FFE8F5E9' }, // verde
     drenaje: { header: 'FF6A4C93', text: 'FFFFFFFF', fila: 'FFF1E6FA' }, // violeta
     humedad: { header: 'FFB08900', text: 'FFFFFFFF', fila: 'FFFFF6DC' }, // amarillo mostaza
+    pctdrenaje: { header: 'FF1565C0', text: 'FFFFFFFF', fila: 'FFDCEEFB' }, // azul
   };
 
   function headerRow(ws, headers, colores) {
@@ -1203,23 +1448,26 @@ async function descargarExcel() {
     ws.views = [{ state: 'frozen', ySplit: 1 }];
   }
 
-  // ── Hoja 1 — Todos los registros (columnas separadas para Humedad, sin mezclar) ──
+  // ── Hoja 1 — Todos los registros (columnas separadas para Humedad y % Drenaje, sin mezclar) ──
   const wsTodos = wb.addWorksheet('Todos los registros');
-  const headersTodos = ['Tipo','Fecha','Trabajador','Equipo','Sector','pH','CE','Nitratos','Potasio','Calcio','Sodio','Hilera','H. Inicial','H. Media','H. Final'];
+  const headersTodos = ['Tipo','Fecha','Hora','Trabajador','Equipo','Sector','pH','CE','Nitratos','Potasio','Calcio','Sodio','Hilera','H. Inicial','H. Media','H. Final','% Drenaje'];
   headerRow(wsTodos, headersTodos, PALETA.todos);
   wsTodos.columns = [
-    {width:10},{width:12},{width:22},{width:18},{width:16},{width:8},{width:8},
-    {width:10},{width:10},{width:10},{width:10},{width:8},{width:11},{width:11},{width:11}
+    {width:12},{width:12},{width:9},{width:22},{width:18},{width:16},{width:8},{width:8},
+    {width:10},{width:10},{width:10},{width:10},{width:8},{width:11},{width:11},{width:11},{width:11}
   ];
-  const coloresPorTipo = { Goteo: 'FFDCEDC8', Drenaje: 'FFE6D6F5', Humedad: 'FFFFF0BF' };
+  const coloresPorTipo = { Goteo: 'FFDCEDC8', Drenaje: 'FFE6D6F5', Humedad: 'FFFFF0BF', PorcentajeDrenaje: 'FFDCEEFB' };
+  const etiquetaTipo = { PorcentajeDrenaje: '% Drenaje' };
   FILTRADOS.forEach(r => {
     const isHum = r.tipo === 'Humedad';
+    const isPct = r.tipo === 'PorcentajeDrenaje';
     const row = wsTodos.addRow([
-      r.tipo||'', r.fecha||'', r.trabajador||'', r.equipo||'', r.sector||'',
-      isHum ? '' : (r.pH||''), isHum ? '' : (r.CE||''), isHum ? '' : (r.Nitratos||''),
-      isHum ? '' : (r.Potasio||''), isHum ? '' : (r.Calcio||''), isHum ? '' : (r.Sodio||''),
+      etiquetaTipo[r.tipo] || r.tipo || '', r.fecha||'', r.hora||'', r.trabajador||'', r.equipo||'', r.sector||'',
+      (isHum||isPct) ? '' : (r.pH||''), (isHum||isPct) ? '' : (r.CE||''), (isHum||isPct) ? '' : (r.Nitratos||''),
+      (isHum||isPct) ? '' : (r.Potasio||''), (isHum||isPct) ? '' : (r.Calcio||''), (isHum||isPct) ? '' : (r.Sodio||''),
       isHum ? (r.hilera||'') : '', isHum ? (r.humedad_inicial||'') : '',
-      isHum ? (r.humedad_media||'') : '', isHum ? (r.humedad_final||'') : ''
+      isHum ? (r.humedad_media||'') : '', isHum ? (r.humedad_final||'') : '',
+      isPct ? (r.PorcentajeDrenaje||'') : ''
     ]);
     const colorFila = coloresPorTipo[r.tipo];
     if (colorFila) {
@@ -1230,28 +1478,37 @@ async function descargarExcel() {
 
   // ── Hoja 2 — Goteo ──
   const wsGoteo = wb.addWorksheet('Goteo');
-  const headersMedicion = ['Fecha','Trabajador','Equipo','Sector','pH','CE','Nitratos','Potasio','Calcio','Sodio'];
+  const headersMedicion = ['Fecha','Hora','Trabajador','Equipo','Sector','pH','CE','Nitratos','Potasio','Calcio','Sodio'];
   headerRow(wsGoteo, headersMedicion, PALETA.goteo);
-  wsGoteo.columns = [{width:12},{width:22},{width:18},{width:16},{width:8},{width:8},{width:10},{width:10},{width:10},{width:10}];
+  wsGoteo.columns = [{width:12},{width:9},{width:22},{width:18},{width:16},{width:8},{width:8},{width:10},{width:10},{width:10},{width:10}];
   FILTRADOS.filter(r => r.tipo === 'Goteo').forEach(r => {
-    wsGoteo.addRow([r.fecha||'', r.trabajador||'', r.equipo||'', r.sector||'', r.pH||'', r.CE||'', r.Nitratos||'', r.Potasio||'', r.Calcio||'', r.Sodio||'']);
+    wsGoteo.addRow([r.fecha||'', r.hora||'', r.trabajador||'', r.equipo||'', r.sector||'', r.pH||'', r.CE||'', r.Nitratos||'', r.Potasio||'', r.Calcio||'', r.Sodio||'']);
   });
 
   // ── Hoja 3 — Drenaje ──
   const wsDrenaje = wb.addWorksheet('Drenaje');
   headerRow(wsDrenaje, headersMedicion, PALETA.drenaje);
-  wsDrenaje.columns = [{width:12},{width:22},{width:18},{width:16},{width:8},{width:8},{width:10},{width:10},{width:10},{width:10}];
+  wsDrenaje.columns = [{width:12},{width:9},{width:22},{width:18},{width:16},{width:8},{width:8},{width:10},{width:10},{width:10},{width:10}];
   FILTRADOS.filter(r => r.tipo === 'Drenaje').forEach(r => {
-    wsDrenaje.addRow([r.fecha||'', r.trabajador||'', r.equipo||'', r.sector||'', r.pH||'', r.CE||'', r.Nitratos||'', r.Potasio||'', r.Calcio||'', r.Sodio||'']);
+    wsDrenaje.addRow([r.fecha||'', r.hora||'', r.trabajador||'', r.equipo||'', r.sector||'', r.pH||'', r.CE||'', r.Nitratos||'', r.Potasio||'', r.Calcio||'', r.Sodio||'']);
   });
 
   // ── Hoja 4 — Humedad ──
   const wsHumedad = wb.addWorksheet('Humedad');
-  const headersHumedad = ['Fecha','Trabajador','Equipo','Sector','Hilera','H. Inicial','H. Media','H. Final'];
+  const headersHumedad = ['Fecha','Hora','Trabajador','Equipo','Sector','Hilera','H. Inicial','H. Media','H. Final'];
   headerRow(wsHumedad, headersHumedad, PALETA.humedad);
-  wsHumedad.columns = [{width:12},{width:22},{width:18},{width:16},{width:8},{width:12},{width:12},{width:12}];
+  wsHumedad.columns = [{width:12},{width:9},{width:22},{width:18},{width:16},{width:8},{width:12},{width:12},{width:12}];
   FILTRADOS.filter(r => r.tipo === 'Humedad').forEach(r => {
-    wsHumedad.addRow([r.fecha||'', r.trabajador||'', r.equipo||'', r.sector||'', r.hilera||'', r.humedad_inicial||'', r.humedad_media||'', r.humedad_final||'']);
+    wsHumedad.addRow([r.fecha||'', r.hora||'', r.trabajador||'', r.equipo||'', r.sector||'', r.hilera||'', r.humedad_inicial||'', r.humedad_media||'', r.humedad_final||'']);
+  });
+
+  // ── Hoja 5 — % Drenaje ──
+  const wsPct = wb.addWorksheet('% Drenaje');
+  const headersPct = ['Fecha','Hora','Trabajador','Equipo','Sector','% Drenaje'];
+  headerRow(wsPct, headersPct, PALETA.pctdrenaje);
+  wsPct.columns = [{width:12},{width:9},{width:22},{width:18},{width:16},{width:12}];
+  FILTRADOS.filter(r => r.tipo === 'PorcentajeDrenaje').forEach(r => {
+    wsPct.addRow([r.fecha||'', r.hora||'', r.trabajador||'', r.equipo||'', r.sector||'', r.PorcentajeDrenaje||'']);
   });
 
   // Descargar
@@ -1352,6 +1609,7 @@ document.getElementById('filtroDesde').value = hace30str;
         ME.nombre = '';
       }
       await cargarRangos();
+      await cargarObjetivosGoteo();
       if (typeof iniciarApp === 'function') iniciarApp();
     } else {
       mostrarLogin();
