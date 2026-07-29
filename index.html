@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AgroMonitor — Dashboard</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
   <style>
     :root {
       --bg:       #0a1a0d;
@@ -637,10 +637,12 @@ async function cargarDatos() {
     DATOS = snap.docs.map(doc => {
       const r = doc.data();
       const fechaJS = r.fecha && r.fecha.toDate ? r.fecha.toDate() : r.fecha;
+      const creadoJS = r.creado_en && r.creado_en.toDate ? r.creado_en.toDate() : null;
       return {
         ...r,
         trabajador: r.trabajador_nombre || '',
-        fecha: normalizarFecha(fechaJS)
+        fecha: normalizarFecha(fechaJS),
+        hora: creadoJS ? creadoJS.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }) : ''
       };
     });
     aplicarFiltros();
@@ -876,9 +878,10 @@ function renderSemaforos() {
   const ultDrenaje = FILTRADOS.filter(r => r.tipo === 'Drenaje').slice(-1)[0];
   const ultHumedad = FILTRADOS.filter(r => r.tipo === 'Humedad').slice(-1)[0];
 
-  document.getElementById('fechaGoteo').textContent = ultGoteo ? `Último registro: ${ultGoteo.fecha}` : '';
-  document.getElementById('fechaDrenaje').textContent = ultDrenaje ? `Último registro: ${ultDrenaje.fecha}` : '';
-  document.getElementById('fechaHumedad').textContent = ultHumedad ? `Último registro: ${ultHumedad.fecha}` : '';
+  const fmtFechaHora = r => r.hora ? `Último registro: ${r.fecha} · ${r.hora}` : `Último registro: ${r.fecha}`;
+  document.getElementById('fechaGoteo').textContent = ultGoteo ? fmtFechaHora(ultGoteo) : '';
+  document.getElementById('fechaDrenaje').textContent = ultDrenaje ? fmtFechaHora(ultDrenaje) : '';
+  document.getElementById('fechaHumedad').textContent = ultHumedad ? fmtFechaHora(ultHumedad) : '';
 
   document.getElementById('semaforoGoteo').innerHTML = ultGoteo
     ? params.map(p => semItem(p, ultGoteo[p])).join('')
@@ -1168,56 +1171,98 @@ function showTab(id, btn) {
 }
 
 // ── DESCARGA EXCEL ───────────────────────────────────────────────────────────
-function descargarExcel() {
+async function descargarExcel() {
   if (!FILTRADOS.length) {
     alert('No hay datos para descargar.');
     return;
   }
 
-  const wb = XLSX.utils.book_new();
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'AgroMonitor';
+  wb.created = new Date();
 
-  const headersMedicion = ['Fecha','Trabajador','Equipo','Sector','pH','CE','Nitratos','Potasio','Calcio','Sodio'];
-  const headersHumedad  = ['Fecha','Trabajador','Equipo','Sector','Hilera','H. Inicial','H. Media','H. Final'];
+  // Paleta tenue, consistente con los colores que ya usa el dashboard
+  const PALETA = {
+    todos:   { header: 'FF1E3D22', text: 'FFE8F5E9' }, // verde oscuro neutro
+    goteo:   { header: 'FF2E7D32', text: 'FFFFFFFF', fila: 'FFE8F5E9' }, // verde
+    drenaje: { header: 'FF6A4C93', text: 'FFFFFFFF', fila: 'FFF1E6FA' }, // violeta
+    humedad: { header: 'FFB08900', text: 'FFFFFFFF', fila: 'FFFFF6DC' }, // amarillo mostaza
+  };
 
-  function toRowMedicion(r) {
-    return [r.fecha||'', r.trabajador||'', r.equipo||'', r.sector||'',
-            r.pH||'', r.CE||'', r.Nitratos||'', r.Potasio||'', r.Calcio||'', r.Sodio||''];
+  function headerRow(ws, headers, colores) {
+    const row = ws.addRow(headers);
+    row.eachCell(cell => {
+      cell.font = { bold: true, color: { argb: colores.text }, size: 11 };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colores.header } };
+      cell.alignment = { vertical: 'middle', horizontal: 'center' };
+    });
+    row.height = 20;
+    ws.views = [{ state: 'frozen', ySplit: 1 }];
   }
-  function toRowHumedad(r) {
-    return [r.fecha||'', r.trabajador||'', r.equipo||'', r.sector||'',
-            r.hilera||'', r.humedad_inicial||'', r.humedad_media||'', r.humedad_final||''];
-  }
 
-  // Hoja 1 — Todos los registros
-  const todosData = FILTRADOS.map(r => {
-    if (r.tipo === 'Humedad') return ['Humedad', ...toRowHumedad(r)];
-    return [r.tipo||'', ...toRowMedicion(r)];
+  // ── Hoja 1 — Todos los registros (columnas separadas para Humedad, sin mezclar) ──
+  const wsTodos = wb.addWorksheet('Todos los registros');
+  const headersTodos = ['Tipo','Fecha','Trabajador','Equipo','Sector','pH','CE','Nitratos','Potasio','Calcio','Sodio','Hilera','H. Inicial','H. Media','H. Final'];
+  headerRow(wsTodos, headersTodos, PALETA.todos);
+  wsTodos.columns = [
+    {width:10},{width:12},{width:22},{width:18},{width:16},{width:8},{width:8},
+    {width:10},{width:10},{width:10},{width:10},{width:8},{width:11},{width:11},{width:11}
+  ];
+  const coloresPorTipo = { Goteo: 'FFDCEDC8', Drenaje: 'FFE6D6F5', Humedad: 'FFFFF0BF' };
+  FILTRADOS.forEach(r => {
+    const isHum = r.tipo === 'Humedad';
+    const row = wsTodos.addRow([
+      r.tipo||'', r.fecha||'', r.trabajador||'', r.equipo||'', r.sector||'',
+      isHum ? '' : (r.pH||''), isHum ? '' : (r.CE||''), isHum ? '' : (r.Nitratos||''),
+      isHum ? '' : (r.Potasio||''), isHum ? '' : (r.Calcio||''), isHum ? '' : (r.Sodio||''),
+      isHum ? (r.hilera||'') : '', isHum ? (r.humedad_inicial||'') : '',
+      isHum ? (r.humedad_media||'') : '', isHum ? (r.humedad_final||'') : ''
+    ]);
+    const colorFila = coloresPorTipo[r.tipo];
+    if (colorFila) {
+      row.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colorFila } };
+      row.getCell(1).font = { bold: true };
+    }
   });
-  const wsTodos = XLSX.utils.aoa_to_sheet([['Tipo',...headersMedicion], ...todosData]);
-  wsTodos['!cols'] = [{wch:10},{wch:12},{wch:22},{wch:18},{wch:16},{wch:8},{wch:8},{wch:10},{wch:10},{wch:10},{wch:10}];
-  XLSX.utils.book_append_sheet(wb, wsTodos, 'Todos los registros');
 
-  // Hoja 2 — Goteo
-  const goteoData = FILTRADOS.filter(r => r.tipo === 'Goteo').map(toRowMedicion);
-  const wsGoteo = XLSX.utils.aoa_to_sheet([headersMedicion, ...goteoData]);
-  wsGoteo['!cols'] = [{wch:12},{wch:22},{wch:18},{wch:16},{wch:8},{wch:8},{wch:10},{wch:10},{wch:10},{wch:10}];
-  XLSX.utils.book_append_sheet(wb, wsGoteo, 'Goteo');
+  // ── Hoja 2 — Goteo ──
+  const wsGoteo = wb.addWorksheet('Goteo');
+  const headersMedicion = ['Fecha','Trabajador','Equipo','Sector','pH','CE','Nitratos','Potasio','Calcio','Sodio'];
+  headerRow(wsGoteo, headersMedicion, PALETA.goteo);
+  wsGoteo.columns = [{width:12},{width:22},{width:18},{width:16},{width:8},{width:8},{width:10},{width:10},{width:10},{width:10}];
+  FILTRADOS.filter(r => r.tipo === 'Goteo').forEach(r => {
+    wsGoteo.addRow([r.fecha||'', r.trabajador||'', r.equipo||'', r.sector||'', r.pH||'', r.CE||'', r.Nitratos||'', r.Potasio||'', r.Calcio||'', r.Sodio||'']);
+  });
 
-  // Hoja 3 — Drenaje
-  const drenajeData = FILTRADOS.filter(r => r.tipo === 'Drenaje').map(toRowMedicion);
-  const wsDrenaje = XLSX.utils.aoa_to_sheet([headersMedicion, ...drenajeData]);
-  wsDrenaje['!cols'] = [{wch:12},{wch:22},{wch:18},{wch:16},{wch:8},{wch:8},{wch:10},{wch:10},{wch:10},{wch:10}];
-  XLSX.utils.book_append_sheet(wb, wsDrenaje, 'Drenaje');
+  // ── Hoja 3 — Drenaje ──
+  const wsDrenaje = wb.addWorksheet('Drenaje');
+  headerRow(wsDrenaje, headersMedicion, PALETA.drenaje);
+  wsDrenaje.columns = [{width:12},{width:22},{width:18},{width:16},{width:8},{width:8},{width:10},{width:10},{width:10},{width:10}];
+  FILTRADOS.filter(r => r.tipo === 'Drenaje').forEach(r => {
+    wsDrenaje.addRow([r.fecha||'', r.trabajador||'', r.equipo||'', r.sector||'', r.pH||'', r.CE||'', r.Nitratos||'', r.Potasio||'', r.Calcio||'', r.Sodio||'']);
+  });
 
-  // Hoja 4 — Humedad
-  const humedadData = FILTRADOS.filter(r => r.tipo === 'Humedad').map(toRowHumedad);
-  const wsHumedad = XLSX.utils.aoa_to_sheet([headersHumedad, ...humedadData]);
-  wsHumedad['!cols'] = [{wch:12},{wch:22},{wch:18},{wch:16},{wch:8},{wch:12},{wch:12},{wch:12}];
-  XLSX.utils.book_append_sheet(wb, wsHumedad, 'Humedad');
+  // ── Hoja 4 — Humedad ──
+  const wsHumedad = wb.addWorksheet('Humedad');
+  const headersHumedad = ['Fecha','Trabajador','Equipo','Sector','Hilera','H. Inicial','H. Media','H. Final'];
+  headerRow(wsHumedad, headersHumedad, PALETA.humedad);
+  wsHumedad.columns = [{width:12},{width:22},{width:18},{width:16},{width:8},{width:12},{width:12},{width:12}];
+  FILTRADOS.filter(r => r.tipo === 'Humedad').forEach(r => {
+    wsHumedad.addRow([r.fecha||'', r.trabajador||'', r.equipo||'', r.sector||'', r.hilera||'', r.humedad_inicial||'', r.humedad_media||'', r.humedad_final||'']);
+  });
 
-  // Nombre del archivo con fecha
+  // Descargar
   const hoy = new Date().toISOString().split('T')[0];
-  XLSX.writeFile(wb, `AgroMonitor_Reporte_${hoy}.xlsx`);
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `AgroMonitor_Reporte_${hoy}.xlsx`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 // ── INICIO ────────────────────────────────────────────────────────────────────
