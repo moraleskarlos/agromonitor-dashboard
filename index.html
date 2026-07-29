@@ -926,15 +926,15 @@ function renderTabla() {
   const registros = tipoSel ? FILTRADOS.filter(r => r.tipo === tipoSel) : FILTRADOS;
 
   if (tipoSel === 'Humedad') {
-    thead.innerHTML = `<tr><th>Fecha</th><th>Trabajador</th><th>Equipo</th><th>Sector</th><th>Hilera</th><th>H. Inicial</th><th>H. Media</th><th>H. Final</th></tr>`;
+    thead.innerHTML = `<tr><th>Fecha</th><th>Hora</th><th>Trabajador</th><th>Equipo</th><th>Sector</th><th>Hilera</th><th>H. Inicial</th><th>H. Media</th><th>H. Final</th></tr>`;
   } else if (tipoSel === 'Goteo' || tipoSel === 'Drenaje') {
-    thead.innerHTML = `<tr><th>Fecha</th><th>Trabajador</th><th>Equipo</th><th>Sector</th><th>pH</th><th>CE</th><th>Nitratos</th><th>Potasio</th><th>Calcio</th><th>Sodio</th></tr>`;
+    thead.innerHTML = `<tr><th>Fecha</th><th>Hora</th><th>Trabajador</th><th>Equipo</th><th>Sector</th><th>pH</th><th>CE</th><th>Nitratos</th><th>Potasio</th><th>Calcio</th><th>Sodio</th></tr>`;
   } else {
-    thead.innerHTML = `<tr><th>Tipo</th><th>Fecha</th><th>Trabajador</th><th>Equipo</th><th>Sector</th><th>pH / Hilera</th><th>CE / H.Inicial</th><th>Nitratos / H.Media</th><th>Potasio / H.Final</th><th>Calcio</th><th>Sodio</th></tr>`;
+    thead.innerHTML = `<tr><th>Tipo</th><th>Fecha</th><th>Hora</th><th>Trabajador</th><th>Equipo</th><th>Sector</th><th>pH / Hilera</th><th>CE / H.Inicial</th><th>Nitratos / H.Media</th><th>Potasio / H.Final</th><th>Calcio</th><th>Sodio</th></tr>`;
   }
 
   if (!registros.length) {
-    tbody.innerHTML = `<tr><td colspan="11" class="empty">Sin registros</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="12" class="empty">Sin registros</td></tr>`;
     return;
   }
 
@@ -945,6 +945,7 @@ function renderTabla() {
     if (tipoSel === 'Humedad') {
       return `<tr>
         <td>${r.fecha || '—'}</td>
+        <td>${r.hora || '—'}</td>
         <td>${(r.trabajador || '—').split(' ')[0]}</td>
         <td>${r.equipo || '—'}</td>
         <td>${r.sector || '—'}</td>
@@ -957,6 +958,7 @@ function renderTabla() {
     if (tipoSel === 'Goteo' || tipoSel === 'Drenaje') {
       return `<tr>
         <td>${r.fecha || '—'}</td>
+        <td>${r.hora || '—'}</td>
         <td>${(r.trabajador || '—').split(' ')[0]}</td>
         <td>${r.equipo || '—'}</td>
         <td>${r.sector || '—'}</td>
@@ -973,6 +975,7 @@ function renderTabla() {
     return `<tr>
       <td><span class="badge ${badgeClass}">${tipo}</span></td>
       <td>${r.fecha || '—'}</td>
+      <td>${r.hora || '—'}</td>
       <td>${(r.trabajador || '—').split(' ')[0]}</td>
       <td>${r.equipo || '—'}</td>
       <td>${r.sector || '—'}</td>
