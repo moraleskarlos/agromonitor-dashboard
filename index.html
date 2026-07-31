@@ -1324,7 +1324,27 @@ function getPorHilera(data, param) {
   return { labels: labels.map(l => 'Hilera ' + l), values: labels.map(l => byHilera[l].reduce((a,b)=>a+b,0)/byHilera[l].length) };
 }
 
-const COLORS = ['#4caf50','#81c784','#a5d6a7','#ce93d8','#42a5f5','#ffd54f','#ef5350','#26c6da'];
+const COLORS = ['#4caf50','#81c784','#a5d6a7','#ce93d8','#42a5f5','#ffd54f','#ef5350','#26c6da','#ba68c8','#4db6ac'];
+
+// Igual que getLinea, pero devuelve UN dataset por Sector (línea de color distinto) en vez de promediar todo junto
+function getLineaPorSector(data, param) {
+  const sectores = [...new Set(data.map(r => r.sector).filter(Boolean))].sort();
+  const fechas = [...new Set(data.map(r => r.fecha).filter(Boolean))].sort();
+  const datasets = sectores.map((sec, i) => {
+    const porFecha = {};
+    data.filter(r => r.sector === sec).forEach(r => {
+      const v = parseFloat(r[param]);
+      if (!isNaN(v)) { if (!porFecha[r.fecha]) porFecha[r.fecha] = []; porFecha[r.fecha].push(v); }
+    });
+    const color = COLORS[i % COLORS.length];
+    return {
+      label: sec,
+      data: fechas.map(f => porFecha[f] ? porFecha[f].reduce((a,b)=>a+b,0)/porFecha[f].length : null),
+      borderColor: color, backgroundColor: color + '22', tension: 0.4, pointRadius: 3, fill: false, spanGaps: true,
+    };
+  });
+  return { labels: fechas, datasets };
+}
 
 function renderGraficos() {
   // Base local: respeta los filtros generales (FILTRADOS) + los selectores propios de esta pestaña
@@ -1346,13 +1366,21 @@ function renderGraficos() {
     const s = getSectores(goteo);
     mkChart('chartGoteoSectores', 'bar', s.labels, [{ label: 'Registros', data: s.values, backgroundColor: '#42a5f566', borderColor: '#42a5f5', borderWidth: 1 }], { indexAxis: 'y' });
     params.forEach(p => {
-      const l = getLinea(goteo, p);
-      const datasets = [{ label: p, data: l.values, borderColor: '#4caf50', backgroundColor: '#4caf5022', tension: 0.4, pointRadius: 3, fill: true }];
-      const obj = OBJETIVOS_GOTEO[p];
-      if (obj !== null && obj !== undefined && obj !== '' && l.labels.length) {
-        datasets.push({ label: 'Objetivo', data: l.labels.map(() => obj), borderColor: '#ff7043', backgroundColor: 'transparent', borderDash: [6,4], borderWidth: 2, pointRadius: 0, fill: false });
+      let labels, datasets;
+      if (currentGrafSector) {
+        const l = getLinea(goteo, p);
+        labels = l.labels;
+        datasets = [{ label: p, data: l.values, borderColor: '#4caf50', backgroundColor: '#4caf5022', tension: 0.4, pointRadius: 3, fill: true }];
+      } else {
+        const lp = getLineaPorSector(goteo, p);
+        labels = lp.labels;
+        datasets = lp.datasets;
       }
-      mkChart('chartGoteo'+p, 'line', l.labels, datasets);
+      const obj = OBJETIVOS_GOTEO[p];
+      if (obj !== null && obj !== undefined && obj !== '' && labels.length) {
+        datasets.push({ label: 'Objetivo', data: labels.map(() => obj), borderColor: '#ff7043', backgroundColor: 'transparent', borderDash: [6,4], borderWidth: 2, pointRadius: 0, fill: false });
+      }
+      mkChart('chartGoteo'+p, 'line', labels, datasets);
     });
   }
 
@@ -1361,7 +1389,15 @@ function renderGraficos() {
     mkChart('chartDrenajeDias', 'bar', d.labels, [{ label: 'Registros', data: d.values, backgroundColor: '#ce93d866', borderColor: '#ce93d8', borderWidth: 1 }]);
     const s = getSectores(drenaje);
     mkChart('chartDrenajeSectores', 'bar', s.labels, [{ label: 'Registros', data: s.values, backgroundColor: '#42a5f566', borderColor: '#42a5f5', borderWidth: 1 }], { indexAxis: 'y' });
-    params.forEach(p => { const l = getLinea(drenaje, p); mkChart('chartDrenaje'+p, 'line', l.labels, [{ label: p, data: l.values, borderColor: '#ce93d8', backgroundColor: '#ce93d822', tension: 0.4, pointRadius: 3, fill: true }]); });
+    params.forEach(p => {
+      if (currentGrafSector) {
+        const l = getLinea(drenaje, p);
+        mkChart('chartDrenaje'+p, 'line', l.labels, [{ label: p, data: l.values, borderColor: '#ce93d8', backgroundColor: '#ce93d822', tension: 0.4, pointRadius: 3, fill: true }]);
+      } else {
+        const lp = getLineaPorSector(drenaje, p);
+        mkChart('chartDrenaje'+p, 'line', lp.labels, lp.datasets);
+      }
+    });
   }
 
   if (currentGrafView === 'humedad') {
@@ -1372,9 +1408,11 @@ function renderGraficos() {
     const modoTexto = currentGrafSector ? '(por hilera)' : '(por fecha)';
     ['Inicial','Media','Final'].forEach(tipo => {
       const key = 'humedad_' + tipo.toLowerCase();
-      // Con un sector elegido, se desglosa por Hilera (1 a 6); sin sector, se agrupa por fecha (promedio general)
+      // Con un sector elegido, se desglosa por Hilera (1 a 6), una color por hilera; sin sector, se agrupa por fecha (promedio general)
       const l = currentGrafSector ? getPorHilera(humedad, key) : getLinea(humedad, key);
-      mkChart('chartHumedad'+tipo, 'bar', l.labels, [{ label: 'Promedio %', data: l.values, backgroundColor: '#ffd54f66', borderColor: '#ffd54f', borderWidth: 1 }]);
+      const colores = currentGrafSector ? l.labels.map((_, i) => COLORS[i % COLORS.length]) : '#ffd54f66';
+      const bordes  = currentGrafSector ? l.labels.map((_, i) => COLORS[i % COLORS.length]) : '#ffd54f';
+      mkChart('chartHumedad'+tipo, 'bar', l.labels, [{ label: 'Promedio %', data: l.values, backgroundColor: colores, borderColor: bordes, borderWidth: 1 }]);
       const sub = document.getElementById('subHumedad'+tipo);
       if (sub) sub.textContent = modoTexto;
     });
