@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AgroMonitor — Dashboard</title>
+  <title>FertiMonitor — Dashboard</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
   <style>
@@ -327,7 +327,7 @@
 
 <div class="login-overlay" id="loginOverlay">
   <div class="login-box">
-    <h2>🌿 AgroMonitor</h2>
+    <h2>🌿 FertiMonitor</h2>
     <p>Iniciá sesión para ver el dashboard</p>
     <input type="text" id="loginUser" placeholder="Usuario (ej: juan.perez)" autocomplete="username">
     <input type="password" id="loginPass" placeholder="Contraseña" autocomplete="current-password">
@@ -339,7 +339,7 @@
 <header id="appHeader" style="display:none;">
   <div class="logo">🌿</div>
   <div class="header-title">
-    <h1>AgroMonitor — Dashboard</h1>
+    <h1>FertiMonitor — Dashboard</h1>
     <p>Sistema de monitoreo de fertirriego</p>
   </div>
   <div class="last-update" id="lastUpdate">Cargando...</div>
@@ -354,16 +354,17 @@
   <div class="filters">
     <div class="filter-group">
       <label>Tipo</label>
-      <select id="filtroTipo">
+      <select id="filtroTipo" onchange="aplicarFiltros()">
         <option value="">Todos</option>
         <option value="Goteo">Goteo</option>
         <option value="Drenaje">Drenaje</option>
         <option value="Humedad">Humedad</option>
+        <option value="PorcentajeDrenaje">% Drenaje</option>
       </select>
     </div>
     <div class="filter-group">
       <label>Equipo</label>
-      <select id="filtroEquipo" onchange="actualizarSectores()">
+      <select id="filtroEquipo" onchange="aplicarFiltros()">
         <option value="">Todos</option>
         <option>Equipo 3 FRU</option>
         <option>Equipo HID 3 FRU</option>
@@ -374,17 +375,17 @@
     </div>
     <div class="filter-group">
       <label>Sector</label>
-      <select id="filtroSector">
+      <select id="filtroSector" onchange="aplicarFiltros()">
         <option value="">Todos</option>
       </select>
     </div>
     <div class="filter-group">
       <label>Fecha desde</label>
-      <input type="date" id="filtroDesde" />
+      <input type="date" id="filtroDesde" onchange="aplicarFiltros()" />
     </div>
     <div class="filter-group">
       <label>Fecha hasta</label>
-      <input type="date" id="filtroHasta" />
+      <input type="date" id="filtroHasta" onchange="aplicarFiltros()" />
     </div>
     <button id="searchBtn" onclick="aplicarFiltros()" style="background:var(--accent);color:#0a1a0d;border:none;border-radius:8px;padding:8px 16px;font-weight:700;font-size:13px;cursor:pointer;align-self:flex-end;">🔍 Buscar</button>
     <button id="clearFilters" onclick="limpiarFiltros()">✕ Limpiar</button>
@@ -485,6 +486,18 @@
     </div>
   </div>
 
+  <!-- MODAL: AVISO DE SESIÓN POR INACTIVIDAD -->
+  <div class="modal-overlay" id="sesionModal">
+    <div class="modal-box" style="max-width:340px;text-align:center;">
+      <div style="font-size:32px;margin-bottom:10px;">⏱️</div>
+      <h3>¿Seguís ahí?</h3>
+      <div style="color:var(--muted);font-size:13px;margin-bottom:18px;">
+        Por seguridad, tu sesión se cerrará en <span id="sesionCountdown">5:00</span> minutos por inactividad.
+      </div>
+      <button class="graf-btn" onclick="seguirConectado()" style="width:100%;">Seguir conectado</button>
+    </div>
+  </div>
+
   <!-- TAB: GRÁFICOS -->
   <div id="tab-graficos" class="tab-content">
     <!-- Selector de vista -->
@@ -554,9 +567,9 @@
         <div class="card"><div class="card-title">🗺️ Top sectores</div><div class="chart-container"><canvas id="chartHumedadSectores"></canvas></div></div>
       </div>
       <div class="grid3">
-        <div class="card"><div class="card-title">💧 H. Inicial promedio</div><div class="chart-container" style="height:160px"><canvas id="chartHumedadInicial"></canvas></div></div>
-        <div class="card"><div class="card-title">💧 H. Media promedio</div><div class="chart-container" style="height:160px"><canvas id="chartHumedadMedia"></canvas></div></div>
-        <div class="card"><div class="card-title">💧 H. Final promedio</div><div class="chart-container" style="height:160px"><canvas id="chartHumedadFinal"></canvas></div></div>
+        <div class="card"><div class="card-title">💧 H. Inicial promedio <span id="subHumedadInicial" style="font-weight:400;font-size:11px;color:var(--muted)"></span></div><div class="chart-container" style="height:160px"><canvas id="chartHumedadInicial"></canvas></div></div>
+        <div class="card"><div class="card-title">💧 H. Media promedio <span id="subHumedadMedia" style="font-weight:400;font-size:11px;color:var(--muted)"></span></div><div class="chart-container" style="height:160px"><canvas id="chartHumedadMedia"></canvas></div></div>
+        <div class="card"><div class="card-title">💧 H. Final promedio <span id="subHumedadFinal" style="font-weight:400;font-size:11px;color:var(--muted)"></span></div><div class="chart-container" style="height:160px"><canvas id="chartHumedadFinal"></canvas></div></div>
       </div>
     </div>
 
@@ -630,6 +643,12 @@
           <label>Mes</label>
           <select id="regMesSelect" onchange="cambiarRegMes()">
             <option value="">Todos los meses</option>
+          </select>
+        </div>
+        <div class="filter-group" style="max-width:220px;">
+          <label>Sector</label>
+          <select id="regSectorSelect" onchange="cambiarRegSector()">
+            <option value="">Todos los sectores</option>
           </select>
         </div>
       </div>
@@ -754,6 +773,7 @@ function aplicarFiltros() {
   actualizarGrafSectores();
   actualizarGrafMeses();
   actualizarRegMeses();
+  actualizarRegSectores();
   renderKPIs();
   renderSemaforos();
   renderTabla();
@@ -1053,6 +1073,7 @@ function renderTabla() {
 
   let registros = tipoSel ? FILTRADOS.filter(r => r.tipo === tipoSel) : FILTRADOS;
   if (currentRegMes) registros = registros.filter(r => (r.fecha || '').slice(0, 7) === currentRegMes);
+  if (currentRegSector) registros = registros.filter(r => r.sector === currentRegSector);
 
   // Orden: por Sector primero, y dentro de cada sector por Hilera (Humedad) o por Hora (resto)
   registros = [...registros].sort((a, b) => {
@@ -1228,6 +1249,22 @@ function actualizarRegMeses() {
   currentRegMes = poblarSelectorMes(sel, mesActual());
 }
 
+let currentRegSector = '';
+function cambiarRegSector() {
+  currentRegSector = document.getElementById('regSectorSelect').value;
+  renderTabla();
+}
+function actualizarRegSectores() {
+  const sel = document.getElementById('regSectorSelect');
+  if (!sel) return;
+  const valorActual = sel.value;
+  const sectores = [...new Set(DATOS.map(r => r.sector).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">Todos los sectores</option>' +
+    sectores.map(s => `<option value="${s}">${s}</option>`).join('');
+  if (sectores.includes(valorActual)) sel.value = valorActual;
+  else currentRegSector = '';
+}
+
 function mkChart(id, type, labels, datasets, opts = {}) {
   if (charts[id]) charts[id].destroy();
   const el = document.getElementById(id);
@@ -1270,6 +1307,21 @@ function getLinea(data, param) {
   });
   const labels = Object.keys(byFecha).sort();
   return { labels, values: labels.map(l => byFecha[l].reduce((a,b)=>a+b,0)/byFecha[l].length) };
+}
+
+// Igual que getLinea, pero agrupa por número de Hilera en vez de por fecha — solo tiene sentido dentro de un sector
+function getPorHilera(data, param) {
+  const byHilera = {};
+  data.forEach(r => {
+    const v = parseFloat(r[param]);
+    const h = r.hilera;
+    if (!isNaN(v) && h !== undefined && h !== null && h !== '') {
+      if (!byHilera[h]) byHilera[h] = [];
+      byHilera[h].push(v);
+    }
+  });
+  const labels = Object.keys(byHilera).sort((a,b) => Number(a) - Number(b));
+  return { labels: labels.map(l => 'Hilera ' + l), values: labels.map(l => byHilera[l].reduce((a,b)=>a+b,0)/byHilera[l].length) };
 }
 
 const COLORS = ['#4caf50','#81c784','#a5d6a7','#ce93d8','#42a5f5','#ffd54f','#ef5350','#26c6da'];
@@ -1317,10 +1369,14 @@ function renderGraficos() {
     mkChart('chartHumedadDias', 'bar', d.labels, [{ label: 'Registros', data: d.values, backgroundColor: '#ffd54f66', borderColor: '#ffd54f', borderWidth: 1 }]);
     const s = getSectores(humedad);
     mkChart('chartHumedadSectores', 'bar', s.labels, [{ label: 'Sectores', data: s.values, backgroundColor: '#ffd54f66', borderColor: '#ffd54f', borderWidth: 1 }], { indexAxis: 'y' });
+    const modoTexto = currentGrafSector ? '(por hilera)' : '(por fecha)';
     ['Inicial','Media','Final'].forEach(tipo => {
       const key = 'humedad_' + tipo.toLowerCase();
-      const l = getLinea(humedad, key);
+      // Con un sector elegido, se desglosa por Hilera (1 a 6); sin sector, se agrupa por fecha (promedio general)
+      const l = currentGrafSector ? getPorHilera(humedad, key) : getLinea(humedad, key);
       mkChart('chartHumedad'+tipo, 'bar', l.labels, [{ label: 'Promedio %', data: l.values, backgroundColor: '#ffd54f66', borderColor: '#ffd54f', borderWidth: 1 }]);
+      const sub = document.getElementById('subHumedad'+tipo);
+      if (sub) sub.textContent = modoTexto;
     });
   }
 
@@ -1425,7 +1481,7 @@ async function descargarExcel() {
   }
 
   const wb = new ExcelJS.Workbook();
-  wb.creator = 'AgroMonitor';
+  wb.creator = 'FertiMonitor';
   wb.created = new Date();
 
   // Paleta tenue, consistente con los colores que ya usa el dashboard
@@ -1518,7 +1574,7 @@ async function descargarExcel() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `AgroMonitor_Reporte_${hoy}.xlsx`;
+  a.download = `FertiMonitor_Reporte_${hoy}.xlsx`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -1593,6 +1649,53 @@ document.getElementById('filtroDesde').value = hace30str;
 
   logoutBtn.addEventListener('click', () => signOut(auth));
 
+  // ── CIERRE DE SESIÓN POR INACTIVIDAD ────────────────────────────────────
+  const AVISO_MS  = 25 * 60 * 1000; // avisa a los 25 min sin actividad
+  const CIERRE_MS = 30 * 60 * 1000; // cierra sesión a los 30 min sin actividad
+  let ultimaActividad = Date.now();
+  let avisoMostrado = false;
+  let cuentaRegresivaInterval = null;
+
+  function registrarActividad() {
+    ultimaActividad = Date.now();
+    if (avisoMostrado) {
+      // Si el usuario interactúa mientras el aviso está visible, se lo consideramos como "seguir conectado"
+      ocultarAvisoSesion();
+    }
+  }
+  ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'].forEach(ev =>
+    document.addEventListener(ev, registrarActividad, { passive: true })
+  );
+
+  function mostrarAvisoSesion() {
+    avisoMostrado = true;
+    document.getElementById('sesionModal').style.display = 'flex';
+    actualizarCuentaRegresiva();
+    cuentaRegresivaInterval = setInterval(actualizarCuentaRegresiva, 1000);
+  }
+  function ocultarAvisoSesion() {
+    avisoMostrado = false;
+    document.getElementById('sesionModal').style.display = 'none';
+    if (cuentaRegresivaInterval) { clearInterval(cuentaRegresivaInterval); cuentaRegresivaInterval = null; }
+  }
+  function actualizarCuentaRegresiva() {
+    const restanteMs = Math.max(0, CIERRE_MS - (Date.now() - ultimaActividad));
+    const min = Math.floor(restanteMs / 60000);
+    const seg = Math.floor((restanteMs % 60000) / 1000);
+    document.getElementById('sesionCountdown').textContent = `${min}:${String(seg).padStart(2,'0')}`;
+  }
+  window.seguirConectado = function() { registrarActividad(); };
+
+  setInterval(() => {
+    const inactivo = Date.now() - ultimaActividad;
+    if (inactivo >= CIERRE_MS) {
+      ocultarAvisoSesion();
+      signOut(auth);
+    } else if (inactivo >= AVISO_MS && !avisoMostrado) {
+      mostrarAvisoSesion();
+    }
+  }, 15000); // chequea cada 15 segundos
+
   // Permite iniciar sesión con Enter
   document.getElementById('loginPass').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') loginBtn.click();
@@ -1601,6 +1704,7 @@ document.getElementById('filtroDesde').value = hace30str;
   onAuthStateChanged(auth, async (user) => {
     if (user) {
       mostrarDashboard();
+      registrarActividad();
       ME.uid = user.uid;
       try {
         const perfilSnap = await getDoc(doc(db, 'usuarios', user.uid));
