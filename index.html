@@ -237,6 +237,12 @@
     .alert-text strong { color: var(--danger); }
     .alert-time { font-size: 11px; color: var(--muted); }
 
+    @keyframes resaltarFila {
+      0%, 100% { background: transparent; }
+      50% { background: #ffd54f33; }
+    }
+    .fila-resaltada { animation: resaltarFila 0.8s ease-in-out 2; }
+
     /* CHART */
     .chart-container { position: relative; height: 240px; }
 
@@ -729,6 +735,7 @@ async function cargarDatos() {
       const creadoJS = r.creado_en && r.creado_en.toDate ? r.creado_en.toDate() : null;
       return {
         ...r,
+        id: doc.id,
         trabajador: r.trabajador_nombre || '',
         fecha: normalizarFecha(fechaJS),
         hora: creadoJS ? creadoJS.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }) : ''
@@ -1119,7 +1126,7 @@ function renderTabla() {
       </tr>`;
     }
     if (tipoSel === 'Goteo' || tipoSel === 'Drenaje') {
-      return `<tr>
+      return `<tr data-id="${r.id || ''}">
         <td>${r.fecha || '—'}</td>
         <td>${r.hora || '—'}</td>
         <td>${(r.trabajador || '—').split(' ')[0]}</td>
@@ -1146,7 +1153,7 @@ function renderTabla() {
     // Vista "Todos"
     const badgeClass = tipo === 'Goteo' ? 'badge-goteo' : tipo === 'Drenaje' ? 'badge-drenaje' : tipo === 'Humedad' ? 'badge-humedad' : 'badge-pctdrenaje';
     const tipoLabel = isPctDrenaje ? '% Drenaje' : tipo;
-    return `<tr>
+    return `<tr data-id="${r.id || ''}">
       <td><span class="badge ${badgeClass}">${tipoLabel}</span></td>
       <td>${r.fecha || '—'}</td>
       <td>${r.hora || '—'}</td>
@@ -1480,7 +1487,7 @@ function renderAlertas() {
         let msg = '';
         if (parseFloat(r[p]) < (rango.alerta_baja || rango.min)) msg = `Valor muy bajo (${v})`;
         else msg = `Valor muy alto (${v})`;
-        alertas.push({ tipo: r.tipo, fecha: r.fecha, equipo: r.equipo, sector: r.sector, param: p, msg, estado });
+        alertas.push({ id: r.id, tipo: r.tipo, fecha: r.fecha, equipo: r.equipo, sector: r.sector, param: p, msg, estado });
       }
     });
   });
@@ -1492,7 +1499,7 @@ function renderAlertas() {
   }
 
   container.innerHTML = alertas.slice(-20).reverse().map(a => `
-    <div class="alert-item">
+    <div class="alert-item" style="cursor:pointer" onclick="irARegistro('${a.id}','${a.tipo}','${a.fecha}','${(a.sector||'').replace(/'/g,"\\'")}')" title="Ver este registro en Registros">
       <div class="alert-icon">${a.estado === 'danger' ? '🔴' : '🟡'}</div>
       <div class="alert-text">
         <strong>${a.param}</strong> — ${a.msg}
@@ -1501,6 +1508,34 @@ function renderAlertas() {
       <div class="alert-time">${a.fecha || ''}</div>
     </div>
   `).join('');
+}
+
+// ── SALTO DESDE ALERTA HACIA EL REGISTRO EXACTO EN LA TABLA ────────────────
+function irARegistro(id, tipo, fecha, sector) {
+  // 1. Cambiar a la pestaña Registros
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-registros').classList.add('active');
+  const btnRegistros = document.querySelector('.tab[onclick*="registros"]');
+  if (btnRegistros) btnRegistros.classList.add('active');
+
+  // 2. Aplicar los filtros locales de esa pestaña para acercarse al registro
+  document.getElementById('tipoRegistroSelect').value = tipo;
+  const mesSel = document.getElementById('regMesSelect');
+  if (mesSel) { mesSel.value = (fecha || '').slice(0, 7); currentRegMes = mesSel.value; }
+  const secSel = document.getElementById('regSectorSelect');
+  if (secSel) { secSel.value = sector; currentRegSector = sector; }
+  renderTabla();
+
+  // 3. Ubicar la fila exacta por su id y resaltarla momentáneamente
+  setTimeout(() => {
+    const fila = document.querySelector(`#tablaBody tr[data-id="${id}"]`);
+    if (fila) {
+      fila.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      fila.classList.add('fila-resaltada');
+      setTimeout(() => fila.classList.remove('fila-resaltada'), 2500);
+    }
+  }, 100);
 }
 
 // ── TABS ──────────────────────────────────────────────────────────────────────
