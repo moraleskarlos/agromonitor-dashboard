@@ -577,6 +577,22 @@
         <div class="card"><div class="card-title">💧 H. Media promedio <span id="subHumedadMedia" style="font-weight:400;font-size:11px;color:var(--muted)"></span></div><div class="chart-container" style="height:160px"><canvas id="chartHumedadMedia"></canvas></div></div>
         <div class="card"><div class="card-title">💧 H. Final promedio <span id="subHumedadFinal" style="font-weight:400;font-size:11px;color:var(--muted)"></span></div><div class="chart-container" style="height:160px"><canvas id="chartHumedadFinal"></canvas></div></div>
       </div>
+
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:6px;">
+          <div class="card-title" style="margin:0;">📈 Comparación por Hilera en el tiempo</div>
+          <div class="filter-group" style="max-width:200px;margin:0;">
+            <label>Hilera</label>
+            <select id="grafHileraSelect" onchange="cambiarGrafHilera()" disabled>
+              <option value="">Elegí un sector primero</option>
+            </select>
+          </div>
+        </div>
+        <div id="humedadHileraMensaje" class="empty">Elegí primero un Sector, y después una Hilera, para comparar su evolución en el tiempo.</div>
+        <div id="humedadHileraChartWrap" class="chart-container" style="height:280px;display:none">
+          <canvas id="chartHumedadHilera"></canvas>
+        </div>
+      </div>
     </div>
 
     <!-- Vista General -->
@@ -778,6 +794,7 @@ function aplicarFiltros() {
 
   actualizarSectores();
   actualizarGrafSectores();
+  actualizarGrafHileras();
   actualizarGrafMeses();
   actualizarRegMeses();
   actualizarRegSectores();
@@ -1195,6 +1212,7 @@ function setGrafView(view, btn) {
 
 function cambiarGrafSector() {
   currentGrafSector = document.getElementById('grafSectorSelect').value;
+  actualizarGrafHileras();
   renderGraficos();
 }
 
@@ -1208,6 +1226,32 @@ function actualizarGrafSectores() {
   // Mantener la selección previa si el sector sigue existiendo
   if (sectores.includes(valorActual)) sel.value = valorActual;
   else currentGrafSector = '';
+}
+
+// ── SELECTOR DE HILERA (solo disponible con un Sector ya elegido) ──────────
+let currentGrafHilera = '';
+function cambiarGrafHilera() {
+  currentGrafHilera = document.getElementById('grafHileraSelect').value;
+  renderGraficos();
+}
+function actualizarGrafHileras() {
+  const sel = document.getElementById('grafHileraSelect');
+  if (!sel) return;
+  if (!currentGrafSector) {
+    sel.innerHTML = '<option value="">Elegí un sector primero</option>';
+    sel.disabled = true;
+    currentGrafHilera = '';
+    return;
+  }
+  const valorActual = sel.value;
+  const hileras = [...new Set(
+    DATOS.filter(r => r.tipo === 'Humedad' && r.sector === currentGrafSector).map(r => r.hilera)
+  )].filter(h => h !== undefined && h !== null && h !== '').sort((a,b) => Number(a) - Number(b));
+  sel.disabled = false;
+  sel.innerHTML = '<option value="">Elegí una hilera</option>' +
+    hileras.map(h => `<option value="${h}">Hilera ${h}</option>`).join('');
+  if (hileras.map(String).includes(valorActual)) sel.value = valorActual;
+  else currentGrafHilera = '';
 }
 
 // ── SELECTORES DE MES (independientes, uno para Gráficos y otro para Registros) ──
@@ -1423,6 +1467,32 @@ function renderGraficos() {
       const sub = document.getElementById('subHumedad'+tipo);
       if (sub) sub.textContent = modoTexto;
     });
+
+    // Gráfico nuevo: comparación de las 3 mediciones en el tiempo, para una Hilera puntual dentro de un Sector
+    const mensajeDiv = document.getElementById('humedadHileraMensaje');
+    const chartWrap  = document.getElementById('humedadHileraChartWrap');
+    if (currentGrafSector && currentGrafHilera) {
+      mensajeDiv.style.display = 'none';
+      chartWrap.style.display = 'block';
+      const registrosHilera = humedad.filter(r => r.sector === currentGrafSector && String(r.hilera) === String(currentGrafHilera));
+      const fechas = [...new Set(registrosHilera.map(r => r.fecha).filter(Boolean))].sort();
+      const serie = (campo) => fechas.map(f => {
+        const reg = registrosHilera.filter(r => r.fecha === f);
+        const vals = reg.map(r => parseFloat(r[campo])).filter(v => !isNaN(v));
+        return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
+      });
+      mkChart('chartHumedadHilera', 'line', fechas, [
+        { label: 'H. Inicial', data: serie('humedad_inicial'), borderColor: '#4caf50', backgroundColor: '#4caf5022', tension: 0.4, pointRadius: 3, fill: false, spanGaps: true },
+        { label: 'H. Media',   data: serie('humedad_media'),   borderColor: '#42a5f5', backgroundColor: '#42a5f522', tension: 0.4, pointRadius: 3, fill: false, spanGaps: true },
+        { label: 'H. Final',   data: serie('humedad_final'),   borderColor: '#ffd54f', backgroundColor: '#ffd54f22', tension: 0.4, pointRadius: 3, fill: false, spanGaps: true },
+      ]);
+    } else {
+      chartWrap.style.display = 'none';
+      mensajeDiv.style.display = 'block';
+      mensajeDiv.textContent = !currentGrafSector
+        ? 'Elegí primero un Sector, y después una Hilera, para comparar su evolución en el tiempo.'
+        : 'Ahora elegí una Hilera para ver su evolución en el tiempo.';
+    }
   }
 
   if (currentGrafView === 'pctdrenaje') {
