@@ -522,11 +522,19 @@
             <option value="">Todos los meses</option>
           </select>
         </div>
-        <div class="filter-group" style="max-width:190px;">
+        <div class="filter-group" style="max-width:200px;position:relative;">
           <label>Fecha específica</label>
-          <select id="grafFechaSelect" onchange="cambiarGrafFecha()">
-            <option value="">Todas las fechas</option>
-          </select>
+          <button type="button" id="grafFechaTrigger" onclick="toggleDropdown(event,'grafFechaChecks')"
+            style="display:flex;justify-content:space-between;align-items:center;width:100%;box-sizing:border-box;
+                   background:var(--surface);border:1.5px solid var(--border);border-radius:8px;
+                   padding:9px 12px;color:var(--text);font-size:13px;cursor:pointer;">
+            <span id="grafFechaTriggerText">Todas las fechas</span>
+            <span style="color:var(--muted);font-size:11px;">▾</span>
+          </button>
+          <div id="grafFechaChecks" style="display:none;position:absolute;top:100%;left:0;margin-top:4px;
+               background:var(--surface);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;
+               z-index:50;min-width:170px;max-height:280px;overflow-y:auto;box-shadow:0 8px 20px rgba(0,0,0,.4);">
+          </div>
         </div>
         <div class="filter-group" style="max-width:220px;">
           <label>Sector (solo gráficos)</label>
@@ -657,20 +665,29 @@
     <div class="card">
       <div class="card-title">📋 Registros</div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:flex-end;">
-        <div class="filter-group" style="max-width:340px;">
+        <div class="filter-group" style="max-width:220px;position:relative;">
           <label>Ver medición</label>
-          <div id="tipoRegistroChecks" style="display:flex;gap:12px;flex-wrap:wrap;background:var(--surface);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;">
-            <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text);cursor:pointer;">
-              <input type="checkbox" value="Goteo" onchange="renderTabla()"> Goteo
+          <button type="button" id="tipoRegistroTrigger" onclick="toggleTipoRegistroDropdown(event)"
+            style="display:flex;justify-content:space-between;align-items:center;width:100%;box-sizing:border-box;
+                   background:var(--surface);border:1.5px solid var(--border);border-radius:8px;
+                   padding:9px 12px;color:var(--text);font-size:13px;cursor:pointer;">
+            <span id="tipoRegistroTriggerText">Todos</span>
+            <span style="color:var(--muted);font-size:11px;">▾</span>
+          </button>
+          <div id="tipoRegistroChecks" style="display:none;position:absolute;top:100%;left:0;margin-top:4px;
+               background:var(--surface);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;
+               z-index:50;min-width:180px;box-shadow:0 8px 20px rgba(0,0,0,.4);">
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text);cursor:pointer;padding:5px 0;">
+              <input type="checkbox" value="Goteo" onchange="cambiarTipoRegistroChecks()"> Goteo
             </label>
-            <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text);cursor:pointer;">
-              <input type="checkbox" value="Drenaje" onchange="renderTabla()"> Drenaje
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text);cursor:pointer;padding:5px 0;">
+              <input type="checkbox" value="Drenaje" onchange="cambiarTipoRegistroChecks()"> Drenaje
             </label>
-            <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text);cursor:pointer;">
-              <input type="checkbox" value="Humedad" onchange="renderTabla()"> Humedad
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text);cursor:pointer;padding:5px 0;">
+              <input type="checkbox" value="Humedad" onchange="cambiarTipoRegistroChecks()"> Humedad
             </label>
-            <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text);cursor:pointer;">
-              <input type="checkbox" value="PorcentajeDrenaje" onchange="renderTabla()"> % Drenaje
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text);cursor:pointer;padding:5px 0;">
+              <input type="checkbox" value="PorcentajeDrenaje" onchange="cambiarTipoRegistroChecks()"> % Drenaje
             </label>
           </div>
         </div>
@@ -680,11 +697,19 @@
             <option value="">Todos los meses</option>
           </select>
         </div>
-        <div class="filter-group" style="max-width:190px;">
+        <div class="filter-group" style="max-width:200px;position:relative;">
           <label>Fecha específica</label>
-          <select id="regFechaSelect" onchange="cambiarRegFecha()">
-            <option value="">Todas las fechas</option>
-          </select>
+          <button type="button" id="regFechaTrigger" onclick="toggleDropdown(event,'regFechaChecks')"
+            style="display:flex;justify-content:space-between;align-items:center;width:100%;box-sizing:border-box;
+                   background:var(--surface);border:1.5px solid var(--border);border-radius:8px;
+                   padding:9px 12px;color:var(--text);font-size:13px;cursor:pointer;">
+            <span id="regFechaTriggerText">Todas las fechas</span>
+            <span style="color:var(--muted);font-size:11px;">▾</span>
+          </button>
+          <div id="regFechaChecks" style="display:none;position:absolute;top:100%;left:0;margin-top:4px;
+               background:var(--surface);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;
+               z-index:50;min-width:170px;max-height:280px;overflow-y:auto;box-shadow:0 8px 20px rgba(0,0,0,.4);">
+          </div>
         </div>
         <div class="filter-group" style="max-width:220px;">
           <label>Sector</label>
@@ -1110,7 +1135,53 @@ function renderTablaRangos() {
   }).join('');
 }
 
-// ── TABLA ─────────────────────────────────────────────────────────────────────
+// ── DESPLEGABLES CON CHECKBOXES (Ver medición, Fecha específica en Registros y Gráficos) ──
+const PANELES_DESPLEGABLES = ['tipoRegistroChecks', 'regFechaChecks', 'grafFechaChecks'];
+
+function toggleDropdown(e, panelId) {
+  if (e) e.stopPropagation();
+  const panel = document.getElementById(panelId);
+  const abrir = panel.style.display === 'none' || !panel.style.display;
+  PANELES_DESPLEGABLES.forEach(id => { const p = document.getElementById(id); if (p) p.style.display = 'none'; });
+  panel.style.display = abrir ? 'block' : 'none';
+}
+function toggleTipoRegistroDropdown(e) { toggleDropdown(e, 'tipoRegistroChecks'); }
+
+document.addEventListener('click', (e) => {
+  PANELES_DESPLEGABLES.forEach(id => {
+    const panel = document.getElementById(id);
+    if (!panel || panel.style.display === 'none') return;
+    if (!panel.contains(e.target) && !e.target.closest('button')) panel.style.display = 'none';
+  });
+});
+
+function actualizarTipoRegistroTrigger() {
+  const nombres = { Goteo: 'Goteo', Drenaje: 'Drenaje', Humedad: 'Humedad', PorcentajeDrenaje: '% Drenaje' };
+  const marcados = [...document.querySelectorAll('#tipoRegistroChecks input:checked')].map(c => nombres[c.value]);
+  document.getElementById('tipoRegistroTriggerText').textContent = marcados.length ? marcados.join(', ') : 'Todos';
+}
+
+function cambiarTipoRegistroChecks() {
+  actualizarTipoRegistroTrigger();
+  renderTabla();
+}
+
+// Poblar el panel de checkboxes de fecha (Registros o Gráficos) con las fechas reales disponibles
+function poblarChecksFecha(panelId, triggerTextId, onChangeFn) {
+  const panel = document.getElementById(panelId);
+  if (!panel) return [];
+  const marcadasAntes = [...panel.querySelectorAll('input:checked')].map(c => c.value);
+  const fechasDisponibles = [...new Set(DATOS.map(r => r.fecha).filter(Boolean))].sort().reverse();
+  panel.innerHTML = fechasDisponibles.map(f => `
+    <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text);cursor:pointer;padding:4px 0;white-space:nowrap;">
+      <input type="checkbox" value="${f}" onchange="${onChangeFn}()" ${marcadasAntes.includes(f) ? 'checked' : ''}> ${nombreFechaCorta(f)}
+    </label>`).join('') || '<div style="color:var(--muted);font-size:12px;">Sin fechas cargadas</div>';
+  const seleccionadas = [...panel.querySelectorAll('input:checked')].map(c => c.value);
+  const triggerText = document.getElementById(triggerTextId);
+  if (triggerText) triggerText.textContent = seleccionadas.length ? seleccionadas.map(nombreFechaCorta).join(', ') : 'Todas las fechas';
+  return seleccionadas;
+}
+
 function renderTabla() {
   const tbody = document.getElementById('tablaBody');
   const thead = document.getElementById('tablaRegistrosHead');
@@ -1118,7 +1189,7 @@ function renderTabla() {
   const tipoSel = tiposSeleccionados.length === 1 ? tiposSeleccionados[0] : ''; // '' = vista "Todos" (columnas combinadas)
 
   let registros = tiposSeleccionados.length ? FILTRADOS.filter(r => tiposSeleccionados.includes(r.tipo)) : FILTRADOS;
-  if (currentRegFecha) registros = registros.filter(r => r.fecha === currentRegFecha);
+  if (currentRegFechas.length) registros = registros.filter(r => currentRegFechas.includes(r.fecha));
   else if (currentRegMes) registros = registros.filter(r => (r.fecha || '').slice(0, 7) === currentRegMes);
   if (currentRegSector) registros = registros.filter(r => r.sector === currentRegSector);
 
@@ -1301,18 +1372,10 @@ function poblarSelectorMes(sel, valorPorDefecto) {
   return sel.value;
 }
 
-// ── SELECTOR DE FECHA ESPECÍFICA (desplegable con las fechas reales, no calendario nativo) ──
+// ── SELECTOR DE FECHA ESPECÍFICA (desplegable con checkboxes de las fechas reales) ──
 function nombreFechaCorta(f) {
   const [y, m, d] = f.split('-');
   return `${d} ${MESES_ES[parseInt(m, 10) - 1].slice(0, 3)} ${y}`;
-}
-function poblarSelectorFecha(sel) {
-  const fechasDisponibles = [...new Set(DATOS.map(r => r.fecha).filter(Boolean))].sort().reverse();
-  const valorActual = sel.value;
-  sel.innerHTML = '<option value="">Todas las fechas</option>' +
-    fechasDisponibles.map(f => `<option value="${f}">${nombreFechaCorta(f)}</option>`).join('');
-  if (fechasDisponibles.includes(valorActual)) sel.value = valorActual;
-  return sel.value;
 }
 
 let currentGrafMes = '';
@@ -1326,16 +1389,14 @@ function actualizarGrafMeses() {
   currentGrafMes = poblarSelectorMes(sel, mesActual());
 }
 
-// Fecha específica: si está elegida, manda por sobre el Mes (más precisa)
-let currentGrafFecha = '';
+// Fecha(s) específica(s): si hay alguna elegida, manda por sobre el Mes (más precisa)
+let currentGrafFechas = [];
 function cambiarGrafFecha() {
-  currentGrafFecha = document.getElementById('grafFechaSelect').value;
+  currentGrafFechas = poblarChecksFecha('grafFechaChecks', 'grafFechaTriggerText', 'cambiarGrafFecha');
   renderGraficos();
 }
 function actualizarGrafFechas() {
-  const sel = document.getElementById('grafFechaSelect');
-  if (!sel) return;
-  currentGrafFecha = poblarSelectorFecha(sel);
+  currentGrafFechas = poblarChecksFecha('grafFechaChecks', 'grafFechaTriggerText', 'cambiarGrafFecha');
 }
 
 let currentRegMes = '';
@@ -1349,16 +1410,14 @@ function actualizarRegMeses() {
   currentRegMes = poblarSelectorMes(sel, mesActual());
 }
 
-// Fecha específica: si está elegida, manda por sobre el Mes (más precisa)
-let currentRegFecha = '';
+// Fecha(s) específica(s): si hay alguna elegida, manda por sobre el Mes (más precisa)
+let currentRegFechas = [];
 function cambiarRegFecha() {
-  currentRegFecha = document.getElementById('regFechaSelect').value;
+  currentRegFechas = poblarChecksFecha('regFechaChecks', 'regFechaTriggerText', 'cambiarRegFecha');
   renderTabla();
 }
 function actualizarRegFechas() {
-  const sel = document.getElementById('regFechaSelect');
-  if (!sel) return;
-  currentRegFecha = poblarSelectorFecha(sel);
+  currentRegFechas = poblarChecksFecha('regFechaChecks', 'regFechaTriggerText', 'cambiarRegFecha');
 }
 
 let currentRegSector = '';
@@ -1462,7 +1521,7 @@ function renderGraficos() {
   // Base local: respeta los filtros generales (FILTRADOS) + los selectores propios de esta pestaña
   const base = FILTRADOS.filter(r => {
     if (currentGrafSector && r.sector !== currentGrafSector) return false;
-    if (currentGrafFecha) { if (r.fecha !== currentGrafFecha) return false; }
+    if (currentGrafFechas.length) { if (!currentGrafFechas.includes(r.fecha)) return false; }
     else if (currentGrafMes && (r.fecha || '').slice(0, 7) !== currentGrafMes) return false;
     return true;
   });
@@ -1653,8 +1712,11 @@ function irARegistro(id, tipo, fecha, sector) {
 
   // 2. Aplicar los filtros locales de esa pestaña para acercarse al registro
   document.querySelectorAll('#tipoRegistroChecks input').forEach(c => c.checked = (c.value === tipo));
-  const fechaSel = document.getElementById('regFechaSelect');
-  if (fechaSel) { fechaSel.value = fecha || ''; currentRegFecha = fecha || ''; }
+  actualizarTipoRegistroTrigger();
+  document.querySelectorAll('#regFechaChecks input').forEach(c => c.checked = (c.value === fecha));
+  currentRegFechas = fecha ? [fecha] : [];
+  const trigText = document.getElementById('regFechaTriggerText');
+  if (trigText) trigText.textContent = fecha ? nombreFechaCorta(fecha) : 'Todas las fechas';
   const mesSel = document.getElementById('regMesSelect');
   if (mesSel) { mesSel.value = ''; currentRegMes = ''; } // la fecha exacta manda, se limpia el mes para no chocar
   const secSel = document.getElementById('regSectorSelect');
