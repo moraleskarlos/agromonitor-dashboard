@@ -522,9 +522,11 @@
             <option value="">Todos los meses</option>
           </select>
         </div>
-        <div class="filter-group" style="max-width:170px;">
+        <div class="filter-group" style="max-width:190px;">
           <label>Fecha específica</label>
-          <input type="date" id="grafFechaSelect" onchange="cambiarGrafFecha()" />
+          <select id="grafFechaSelect" onchange="cambiarGrafFecha()">
+            <option value="">Todas las fechas</option>
+          </select>
         </div>
         <div class="filter-group" style="max-width:220px;">
           <label>Sector (solo gráficos)</label>
@@ -678,9 +680,11 @@
             <option value="">Todos los meses</option>
           </select>
         </div>
-        <div class="filter-group" style="max-width:170px;">
+        <div class="filter-group" style="max-width:190px;">
           <label>Fecha específica</label>
-          <input type="date" id="regFechaSelect" onchange="cambiarRegFecha()" />
+          <select id="regFechaSelect" onchange="cambiarRegFecha()">
+            <option value="">Todas las fechas</option>
+          </select>
         </div>
         <div class="filter-group" style="max-width:220px;">
           <label>Sector</label>
@@ -811,7 +815,9 @@ function aplicarFiltros() {
   actualizarGrafSectores();
   actualizarGrafHileras();
   actualizarGrafMeses();
+  actualizarGrafFechas();
   actualizarRegMeses();
+  actualizarRegFechas();
   actualizarRegSectores();
   renderKPIs();
   renderSemaforos();
@@ -1295,6 +1301,20 @@ function poblarSelectorMes(sel, valorPorDefecto) {
   return sel.value;
 }
 
+// ── SELECTOR DE FECHA ESPECÍFICA (desplegable con las fechas reales, no calendario nativo) ──
+function nombreFechaCorta(f) {
+  const [y, m, d] = f.split('-');
+  return `${d} ${MESES_ES[parseInt(m, 10) - 1].slice(0, 3)} ${y}`;
+}
+function poblarSelectorFecha(sel) {
+  const fechasDisponibles = [...new Set(DATOS.map(r => r.fecha).filter(Boolean))].sort().reverse();
+  const valorActual = sel.value;
+  sel.innerHTML = '<option value="">Todas las fechas</option>' +
+    fechasDisponibles.map(f => `<option value="${f}">${nombreFechaCorta(f)}</option>`).join('');
+  if (fechasDisponibles.includes(valorActual)) sel.value = valorActual;
+  return sel.value;
+}
+
 let currentGrafMes = '';
 function cambiarGrafMes() {
   currentGrafMes = document.getElementById('grafMesSelect').value;
@@ -1311,6 +1331,11 @@ let currentGrafFecha = '';
 function cambiarGrafFecha() {
   currentGrafFecha = document.getElementById('grafFechaSelect').value;
   renderGraficos();
+}
+function actualizarGrafFechas() {
+  const sel = document.getElementById('grafFechaSelect');
+  if (!sel) return;
+  currentGrafFecha = poblarSelectorFecha(sel);
 }
 
 let currentRegMes = '';
@@ -1329,6 +1354,11 @@ let currentRegFecha = '';
 function cambiarRegFecha() {
   currentRegFecha = document.getElementById('regFechaSelect').value;
   renderTabla();
+}
+function actualizarRegFechas() {
+  const sel = document.getElementById('regFechaSelect');
+  if (!sel) return;
+  currentRegFecha = poblarSelectorFecha(sel);
 }
 
 let currentRegSector = '';
