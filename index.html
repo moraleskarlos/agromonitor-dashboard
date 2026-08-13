@@ -522,6 +522,10 @@
             <option value="">Todos los meses</option>
           </select>
         </div>
+        <div class="filter-group" style="max-width:170px;">
+          <label>Fecha específica</label>
+          <input type="date" id="grafFechaSelect" onchange="cambiarGrafFecha()" />
+        </div>
         <div class="filter-group" style="max-width:220px;">
           <label>Sector (solo gráficos)</label>
           <select id="grafSectorSelect" onchange="cambiarGrafSector()">
@@ -650,22 +654,33 @@
   <div id="tab-registros" class="tab-content">
     <div class="card">
       <div class="card-title">📋 Registros</div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
-        <div class="filter-group" style="max-width:220px;">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:flex-end;">
+        <div class="filter-group" style="max-width:340px;">
           <label>Ver medición</label>
-          <select id="tipoRegistroSelect" onchange="renderTabla()">
-            <option value="">Todos</option>
-            <option value="Goteo">Goteo</option>
-            <option value="Drenaje">Drenaje</option>
-            <option value="Humedad">Humedad</option>
-            <option value="PorcentajeDrenaje">% Drenaje</option>
-          </select>
+          <div id="tipoRegistroChecks" style="display:flex;gap:12px;flex-wrap:wrap;background:var(--surface);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;">
+            <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text);cursor:pointer;">
+              <input type="checkbox" value="Goteo" onchange="renderTabla()"> Goteo
+            </label>
+            <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text);cursor:pointer;">
+              <input type="checkbox" value="Drenaje" onchange="renderTabla()"> Drenaje
+            </label>
+            <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text);cursor:pointer;">
+              <input type="checkbox" value="Humedad" onchange="renderTabla()"> Humedad
+            </label>
+            <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text);cursor:pointer;">
+              <input type="checkbox" value="PorcentajeDrenaje" onchange="renderTabla()"> % Drenaje
+            </label>
+          </div>
         </div>
         <div class="filter-group" style="max-width:200px;">
           <label>Mes</label>
           <select id="regMesSelect" onchange="cambiarRegMes()">
             <option value="">Todos los meses</option>
           </select>
+        </div>
+        <div class="filter-group" style="max-width:170px;">
+          <label>Fecha específica</label>
+          <input type="date" id="regFechaSelect" onchange="cambiarRegFecha()" />
         </div>
         <div class="filter-group" style="max-width:220px;">
           <label>Sector</label>
@@ -1093,10 +1108,12 @@ function renderTablaRangos() {
 function renderTabla() {
   const tbody = document.getElementById('tablaBody');
   const thead = document.getElementById('tablaRegistrosHead');
-  const tipoSel = document.getElementById('tipoRegistroSelect').value;
+  const tiposSeleccionados = [...document.querySelectorAll('#tipoRegistroChecks input:checked')].map(c => c.value);
+  const tipoSel = tiposSeleccionados.length === 1 ? tiposSeleccionados[0] : ''; // '' = vista "Todos" (columnas combinadas)
 
-  let registros = tipoSel ? FILTRADOS.filter(r => r.tipo === tipoSel) : FILTRADOS;
-  if (currentRegMes) registros = registros.filter(r => (r.fecha || '').slice(0, 7) === currentRegMes);
+  let registros = tiposSeleccionados.length ? FILTRADOS.filter(r => tiposSeleccionados.includes(r.tipo)) : FILTRADOS;
+  if (currentRegFecha) registros = registros.filter(r => r.fecha === currentRegFecha);
+  else if (currentRegMes) registros = registros.filter(r => (r.fecha || '').slice(0, 7) === currentRegMes);
   if (currentRegSector) registros = registros.filter(r => r.sector === currentRegSector);
 
   // Orden: por Sector primero, y dentro de cada sector por Hilera (Humedad) o por Hora (resto)
@@ -1130,7 +1147,7 @@ function renderTabla() {
     const isPctDrenaje = tipo === 'PorcentajeDrenaje';
 
     if (tipoSel === 'Humedad') {
-      return `<tr>
+      return `<tr data-id="${r.id || ''}">
         <td>${r.fecha || '—'}</td>
         <td>${r.hora || '—'}</td>
         <td>${(r.trabajador || '—').split(' ')[0]}</td>
@@ -1158,7 +1175,7 @@ function renderTabla() {
       </tr>`;
     }
     if (tipoSel === 'PorcentajeDrenaje') {
-      return `<tr>
+      return `<tr data-id="${r.id || ''}">
         <td>${r.fecha || '—'}</td>
         <td>${r.hora || '—'}</td>
         <td>${(r.trabajador || '—').split(' ')[0]}</td>
@@ -1167,7 +1184,7 @@ function renderTabla() {
         <td>${fmtVal(r.PorcentajeDrenaje,'PorcentajeDrenaje')}</td>
       </tr>`;
     }
-    // Vista "Todos"
+    // Vista "Todos" (ninguno o varios tipos seleccionados a la vez)
     const badgeClass = tipo === 'Goteo' ? 'badge-goteo' : tipo === 'Drenaje' ? 'badge-drenaje' : tipo === 'Humedad' ? 'badge-humedad' : 'badge-pctdrenaje';
     const tipoLabel = isPctDrenaje ? '% Drenaje' : tipo;
     return `<tr data-id="${r.id || ''}">
@@ -1289,6 +1306,13 @@ function actualizarGrafMeses() {
   currentGrafMes = poblarSelectorMes(sel, mesActual());
 }
 
+// Fecha específica: si está elegida, manda por sobre el Mes (más precisa)
+let currentGrafFecha = '';
+function cambiarGrafFecha() {
+  currentGrafFecha = document.getElementById('grafFechaSelect').value;
+  renderGraficos();
+}
+
 let currentRegMes = '';
 function cambiarRegMes() {
   currentRegMes = document.getElementById('regMesSelect').value;
@@ -1298,6 +1322,13 @@ function actualizarRegMeses() {
   const sel = document.getElementById('regMesSelect');
   if (!sel) return;
   currentRegMes = poblarSelectorMes(sel, mesActual());
+}
+
+// Fecha específica: si está elegida, manda por sobre el Mes (más precisa)
+let currentRegFecha = '';
+function cambiarRegFecha() {
+  currentRegFecha = document.getElementById('regFechaSelect').value;
+  renderTabla();
 }
 
 let currentRegSector = '';
@@ -1401,7 +1432,8 @@ function renderGraficos() {
   // Base local: respeta los filtros generales (FILTRADOS) + los selectores propios de esta pestaña
   const base = FILTRADOS.filter(r => {
     if (currentGrafSector && r.sector !== currentGrafSector) return false;
-    if (currentGrafMes && (r.fecha || '').slice(0, 7) !== currentGrafMes) return false;
+    if (currentGrafFecha) { if (r.fecha !== currentGrafFecha) return false; }
+    else if (currentGrafMes && (r.fecha || '').slice(0, 7) !== currentGrafMes) return false;
     return true;
   });
 
@@ -1590,9 +1622,11 @@ function irARegistro(id, tipo, fecha, sector) {
   if (btnRegistros) btnRegistros.classList.add('active');
 
   // 2. Aplicar los filtros locales de esa pestaña para acercarse al registro
-  document.getElementById('tipoRegistroSelect').value = tipo;
+  document.querySelectorAll('#tipoRegistroChecks input').forEach(c => c.checked = (c.value === tipo));
+  const fechaSel = document.getElementById('regFechaSelect');
+  if (fechaSel) { fechaSel.value = fecha || ''; currentRegFecha = fecha || ''; }
   const mesSel = document.getElementById('regMesSelect');
-  if (mesSel) { mesSel.value = (fecha || '').slice(0, 7); currentRegMes = mesSel.value; }
+  if (mesSel) { mesSel.value = ''; currentRegMes = ''; } // la fecha exacta manda, se limpia el mes para no chocar
   const secSel = document.getElementById('regSectorSelect');
   if (secSel) { secSel.value = sector; currentRegSector = sector; }
   renderTabla();
