@@ -514,6 +514,7 @@
         <button class="graf-btn" onclick="setGrafView('humedad',this)">🌱 Humedad</button>
         <button class="graf-btn" onclick="setGrafView('general',this)">📊 General</button>
         <button class="graf-btn" onclick="setGrafView('pctdrenaje',this)">📉 % Drenaje</button>
+        <button class="graf-btn" onclick="setGrafView('comparacion',this)">🔀 Goteo vs Drenaje</button>
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;">
         <div class="filter-group" style="max-width:200px;">
@@ -554,13 +555,13 @@
         <div class="card"><div class="card-title">📅 Registros por día</div><div class="chart-container"><canvas id="chartGoteoDias"></canvas></div></div>
         <div class="card"><div class="card-title">🗺️ Top sectores</div><div class="chart-container"><canvas id="chartGoteoSectores"></canvas></div></div>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">
-        <div class="card"><div class="card-title">📈 pH</div><div class="chart-container" style="height:160px"><canvas id="chartGoteopH"></canvas></div></div>
-        <div class="card"><div class="card-title">📈 CE</div><div class="chart-container" style="height:160px"><canvas id="chartGoteoCE"></canvas></div></div>
-        <div class="card"><div class="card-title">📈 Nitratos</div><div class="chart-container" style="height:160px"><canvas id="chartGoteoNitratos"></canvas></div></div>
-        <div class="card"><div class="card-title">📈 Potasio</div><div class="chart-container" style="height:160px"><canvas id="chartGoteoPotasio"></canvas></div></div>
-        <div class="card"><div class="card-title">📈 Calcio</div><div class="chart-container" style="height:160px"><canvas id="chartGoteoCalcio"></canvas></div></div>
-        <div class="card"><div class="card-title">📈 Sodio</div><div class="chart-container" style="height:160px"><canvas id="chartGoteoSodio"></canvas></div></div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;">
+        <div class="card"><div class="card-title">📈 pH</div><div class="chart-container" style="height:220px"><canvas id="chartGoteopH"></canvas></div></div>
+        <div class="card"><div class="card-title">📈 CE</div><div class="chart-container" style="height:220px"><canvas id="chartGoteoCE"></canvas></div></div>
+        <div class="card"><div class="card-title">📈 Nitratos</div><div class="chart-container" style="height:220px"><canvas id="chartGoteoNitratos"></canvas></div></div>
+        <div class="card"><div class="card-title">📈 Potasio</div><div class="chart-container" style="height:220px"><canvas id="chartGoteoPotasio"></canvas></div></div>
+        <div class="card"><div class="card-title">📈 Calcio</div><div class="chart-container" style="height:220px"><canvas id="chartGoteoCalcio"></canvas></div></div>
+        <div class="card"><div class="card-title">📈 Sodio</div><div class="chart-container" style="height:220px"><canvas id="chartGoteoSodio"></canvas></div></div>
       </div>
     </div>
 
@@ -570,13 +571,13 @@
         <div class="card"><div class="card-title">📅 Registros por día</div><div class="chart-container"><canvas id="chartDrenajeDias"></canvas></div></div>
         <div class="card"><div class="card-title">🗺️ Top sectores</div><div class="chart-container"><canvas id="chartDrenajeSectores"></canvas></div></div>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">
-        <div class="card"><div class="card-title">📈 pH</div><div class="chart-container" style="height:160px"><canvas id="chartDrenajepH"></canvas></div></div>
-        <div class="card"><div class="card-title">📈 CE</div><div class="chart-container" style="height:160px"><canvas id="chartDrenajeCE"></canvas></div></div>
-        <div class="card"><div class="card-title">📈 Nitratos</div><div class="chart-container" style="height:160px"><canvas id="chartDrenajeNitratos"></canvas></div></div>
-        <div class="card"><div class="card-title">📈 Potasio</div><div class="chart-container" style="height:160px"><canvas id="chartDrenajePotasio"></canvas></div></div>
-        <div class="card"><div class="card-title">📈 Calcio</div><div class="chart-container" style="height:160px"><canvas id="chartDrenajeCalcio"></canvas></div></div>
-        <div class="card"><div class="card-title">📈 Sodio</div><div class="chart-container" style="height:160px"><canvas id="chartDrenajeSodio"></canvas></div></div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;">
+        <div class="card"><div class="card-title">📈 pH</div><div class="chart-container" style="height:220px"><canvas id="chartDrenajepH"></canvas></div></div>
+        <div class="card"><div class="card-title">📈 CE</div><div class="chart-container" style="height:220px"><canvas id="chartDrenajeCE"></canvas></div></div>
+        <div class="card"><div class="card-title">📈 Nitratos</div><div class="chart-container" style="height:220px"><canvas id="chartDrenajeNitratos"></canvas></div></div>
+        <div class="card"><div class="card-title">📈 Potasio</div><div class="chart-container" style="height:220px"><canvas id="chartDrenajePotasio"></canvas></div></div>
+        <div class="card"><div class="card-title">📈 Calcio</div><div class="chart-container" style="height:220px"><canvas id="chartDrenajeCalcio"></canvas></div></div>
+        <div class="card"><div class="card-title">📈 Sodio</div><div class="chart-container" style="height:220px"><canvas id="chartDrenajeSodio"></canvas></div></div>
       </div>
     </div>
 
@@ -626,6 +627,19 @@
         <div class="card"><div class="card-title">🗺️ Top sectores</div><div class="chart-container"><canvas id="chartPctDrenajeSectores"></canvas></div></div>
       </div>
       <div class="card"><div class="card-title">📈 % Drenaje promedio</div><div class="chart-container" style="height:220px"><canvas id="chartPctDrenajeValor"></canvas></div></div>
+    </div>
+
+    <!-- Vista Goteo vs Drenaje (mezclado, por sector y parámetro) -->
+    <div id="grafView-comparacion" class="graf-view" style="display:none">
+      <div id="comparacionMensaje" class="empty">Elegí un Sector arriba para comparar Goteo vs Drenaje en ese mismo lugar.</div>
+      <div id="comparacionChartsWrap" style="display:none;grid-template-columns:repeat(2,1fr);gap:14px;">
+        <div class="card"><div class="card-title">📈 pH — Goteo vs Drenaje</div><div class="chart-container" style="height:220px"><canvas id="chartComppH"></canvas></div></div>
+        <div class="card"><div class="card-title">📈 CE — Goteo vs Drenaje</div><div class="chart-container" style="height:220px"><canvas id="chartCompCE"></canvas></div></div>
+        <div class="card"><div class="card-title">📈 Nitratos — Goteo vs Drenaje</div><div class="chart-container" style="height:220px"><canvas id="chartCompNitratos"></canvas></div></div>
+        <div class="card"><div class="card-title">📈 Potasio — Goteo vs Drenaje</div><div class="chart-container" style="height:220px"><canvas id="chartCompPotasio"></canvas></div></div>
+        <div class="card"><div class="card-title">📈 Calcio — Goteo vs Drenaje</div><div class="chart-container" style="height:220px"><canvas id="chartCompCalcio"></canvas></div></div>
+        <div class="card"><div class="card-title">📈 Sodio — Goteo vs Drenaje</div><div class="chart-container" style="height:220px"><canvas id="chartCompSodio"></canvas></div></div>
+      </div>
     </div>
   </div>
 
@@ -677,17 +691,17 @@
           <div id="tipoRegistroChecks" style="display:none;position:absolute;top:100%;left:0;margin-top:4px;
                background:var(--surface);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;
                z-index:50;min-width:180px;box-shadow:0 8px 20px rgba(0,0,0,.4);">
-            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text);cursor:pointer;padding:5px 0;">
-              <input type="checkbox" value="Goteo" onchange="cambiarTipoRegistroChecks()"> Goteo
+            <label style="display:block;font-size:12px;color:var(--text);cursor:pointer;padding:6px 2px;">
+              <input type="checkbox" value="Goteo" onchange="cambiarTipoRegistroChecks()" style="margin-right:8px;vertical-align:middle;"><span style="vertical-align:middle;">Goteo</span>
             </label>
-            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text);cursor:pointer;padding:5px 0;">
-              <input type="checkbox" value="Drenaje" onchange="cambiarTipoRegistroChecks()"> Drenaje
+            <label style="display:block;font-size:12px;color:var(--text);cursor:pointer;padding:6px 2px;">
+              <input type="checkbox" value="Drenaje" onchange="cambiarTipoRegistroChecks()" style="margin-right:8px;vertical-align:middle;"><span style="vertical-align:middle;">Drenaje</span>
             </label>
-            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text);cursor:pointer;padding:5px 0;">
-              <input type="checkbox" value="Humedad" onchange="cambiarTipoRegistroChecks()"> Humedad
+            <label style="display:block;font-size:12px;color:var(--text);cursor:pointer;padding:6px 2px;">
+              <input type="checkbox" value="Humedad" onchange="cambiarTipoRegistroChecks()" style="margin-right:8px;vertical-align:middle;"><span style="vertical-align:middle;">Humedad</span>
             </label>
-            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text);cursor:pointer;padding:5px 0;">
-              <input type="checkbox" value="PorcentajeDrenaje" onchange="cambiarTipoRegistroChecks()"> % Drenaje
+            <label style="display:block;font-size:12px;color:var(--text);cursor:pointer;padding:6px 2px;">
+              <input type="checkbox" value="PorcentajeDrenaje" onchange="cambiarTipoRegistroChecks()" style="margin-right:8px;vertical-align:middle;"><span style="vertical-align:middle;">% Drenaje</span>
             </label>
           </div>
         </div>
@@ -1091,7 +1105,7 @@ function renderSemaforos() {
   const ultHumedad = FILTRADOS.filter(r => r.tipo === 'Humedad').slice(-1)[0];
   const ultPctDrenaje = FILTRADOS.filter(r => r.tipo === 'PorcentajeDrenaje').slice(-1)[0];
 
-  const fmtFechaHora = r => r.hora ? `Último registro: ${r.fecha} · ${r.hora}` : `Último registro: ${r.fecha}`;
+  const fmtFechaHora = r => r.hora ? `Último registro: ${formatFecha(r.fecha)} · ${r.hora}` : `Último registro: ${formatFecha(r.fecha)}`;
   document.getElementById('fechaGoteo').textContent = ultGoteo ? fmtFechaHora(ultGoteo) : '';
   document.getElementById('fechaDrenaje').textContent = ultDrenaje ? fmtFechaHora(ultDrenaje) : '';
   document.getElementById('fechaHumedad').textContent = ultHumedad ? fmtFechaHora(ultHumedad) : '';
@@ -1173,8 +1187,8 @@ function poblarChecksFecha(panelId, triggerTextId, onChangeFn) {
   const marcadasAntes = [...panel.querySelectorAll('input:checked')].map(c => c.value);
   const fechasDisponibles = [...new Set(DATOS.map(r => r.fecha).filter(Boolean))].sort().reverse();
   panel.innerHTML = fechasDisponibles.map(f => `
-    <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text);cursor:pointer;padding:4px 0;white-space:nowrap;">
-      <input type="checkbox" value="${f}" onchange="${onChangeFn}()" ${marcadasAntes.includes(f) ? 'checked' : ''}> ${nombreFechaCorta(f)}
+    <label style="display:block;font-size:12px;color:var(--text);cursor:pointer;padding:5px 2px;white-space:nowrap;">
+      <input type="checkbox" value="${f}" onchange="${onChangeFn}()" style="margin-right:8px;vertical-align:middle;" ${marcadasAntes.includes(f) ? 'checked' : ''}><span style="vertical-align:middle;">${nombreFechaCorta(f)}</span>
     </label>`).join('') || '<div style="color:var(--muted);font-size:12px;">Sin fechas cargadas</div>';
   const seleccionadas = [...panel.querySelectorAll('input:checked')].map(c => c.value);
   const triggerText = document.getElementById(triggerTextId);
@@ -1193,8 +1207,10 @@ function renderTabla() {
   else if (currentRegMes) registros = registros.filter(r => (r.fecha || '').slice(0, 7) === currentRegMes);
   if (currentRegSector) registros = registros.filter(r => r.sector === currentRegSector);
 
-  // Orden: por Sector primero, y dentro de cada sector por Hilera (Humedad) o por Hora (resto)
+  // Orden: por Fecha primero (más reciente arriba, agrupando cada día), después por Sector, y dentro de eso por Hilera (Humedad) o por Hora (resto)
   registros = [...registros].sort((a, b) => {
+    const fa = (b.fecha || '').localeCompare(a.fecha || ''); // más reciente primero
+    if (fa !== 0) return fa;
     const sa = (a.sector || '').localeCompare(b.sector || '', 'es', { numeric: true });
     if (sa !== 0) return sa;
     if (a.tipo === 'Humedad' || b.tipo === 'Humedad') {
@@ -1225,7 +1241,7 @@ function renderTabla() {
 
     if (tipoSel === 'Humedad') {
       return `<tr data-id="${r.id || ''}">
-        <td>${r.fecha || '—'}</td>
+        <td>${formatFecha(r.fecha) || '—'}</td>
         <td>${r.hora || '—'}</td>
         <td>${(r.trabajador || '—').split(' ')[0]}</td>
         <td>${r.equipo || '—'}</td>
@@ -1238,7 +1254,7 @@ function renderTabla() {
     }
     if (tipoSel === 'Goteo' || tipoSel === 'Drenaje') {
       return `<tr data-id="${r.id || ''}">
-        <td>${r.fecha || '—'}</td>
+        <td>${formatFecha(r.fecha) || '—'}</td>
         <td>${r.hora || '—'}</td>
         <td>${(r.trabajador || '—').split(' ')[0]}</td>
         <td>${r.equipo || '—'}</td>
@@ -1253,7 +1269,7 @@ function renderTabla() {
     }
     if (tipoSel === 'PorcentajeDrenaje') {
       return `<tr data-id="${r.id || ''}">
-        <td>${r.fecha || '—'}</td>
+        <td>${formatFecha(r.fecha) || '—'}</td>
         <td>${r.hora || '—'}</td>
         <td>${(r.trabajador || '—').split(' ')[0]}</td>
         <td>${r.equipo || '—'}</td>
@@ -1266,7 +1282,7 @@ function renderTabla() {
     const tipoLabel = isPctDrenaje ? '% Drenaje' : tipo;
     return `<tr data-id="${r.id || ''}">
       <td><span class="badge ${badgeClass}">${tipoLabel}</span></td>
-      <td>${r.fecha || '—'}</td>
+      <td>${formatFecha(r.fecha) || '—'}</td>
       <td>${r.hora || '—'}</td>
       <td>${(r.trabajador || '—').split(' ')[0]}</td>
       <td>${r.equipo || '—'}</td>
@@ -1372,11 +1388,14 @@ function poblarSelectorMes(sel, valorPorDefecto) {
   return sel.value;
 }
 
-// ── SELECTOR DE FECHA ESPECÍFICA (desplegable con checkboxes de las fechas reales) ──
-function nombreFechaCorta(f) {
+// ── FORMATO DE FECHA PARA MOSTRAR (DD-MM-AAAA en todo el dashboard; por dentro se sigue guardando AAAA-MM-DD) ──
+function formatFecha(f) {
+  if (!f || typeof f !== 'string' || !f.includes('-')) return f || '';
   const [y, m, d] = f.split('-');
-  return `${d} ${MESES_ES[parseInt(m, 10) - 1].slice(0, 3)} ${y}`;
+  if (!y || !m || !d) return f;
+  return `${d}-${m}-${y}`;
 }
+function nombreFechaCorta(f) { return formatFecha(f); }
 
 let currentGrafMes = '';
 function cambiarGrafMes() {
@@ -1436,13 +1455,16 @@ function actualizarRegSectores() {
   else currentRegSector = '';
 }
 
+const RE_FECHA_ISO = /^\d{4}-\d{2}-\d{2}$/;
 function mkChart(id, type, labels, datasets, opts = {}) {
   if (charts[id]) charts[id].destroy();
   const el = document.getElementById(id);
   if (!el) return;
+  // Si los labels son fechas AAAA-MM-DD, se muestran como DD-MM-AAAA sin tocar el orden ni los datos
+  const labelsMostrados = labels.map(l => RE_FECHA_ISO.test(l) ? formatFecha(l) : l);
   charts[id] = new Chart(el.getContext('2d'), {
     type,
-    data: { labels, datasets },
+    data: { labels: labelsMostrados, datasets },
     options: {
       responsive: true,
       maintainAspectRatio: false,
@@ -1495,7 +1517,7 @@ function getPorHilera(data, param) {
   return { labels: labels.map(l => 'Hilera ' + l), values: labels.map(l => byHilera[l].reduce((a,b)=>a+b,0)/byHilera[l].length) };
 }
 
-const COLORS = ['#4caf50','#81c784','#a5d6a7','#ce93d8','#42a5f5','#ffd54f','#ef5350','#26c6da','#ba68c8','#4db6ac'];
+const COLORS = ['#ef5350','#42a5f5','#66bb6a','#ffa726','#ab47bc','#26c6da','#ffee58','#8d6e63','#ec407a','#26a69a'];
 
 // Igual que getLinea, pero devuelve UN dataset por Sector (línea de color distinto) en vez de promediar todo junto
 function getLineaPorSector(data, param) {
@@ -1625,6 +1647,28 @@ function renderGraficos() {
     mkChart('chartPctDrenajeValor', 'line', l.labels, [{ label: '% Drenaje promedio', data: l.values, borderColor: '#42a5f5', backgroundColor: '#42a5f522', tension: 0.4, pointRadius: 3, fill: true }]);
   }
 
+  if (currentGrafView === 'comparacion') {
+    const mensajeDiv = document.getElementById('comparacionMensaje');
+    const chartsWrap = document.getElementById('comparacionChartsWrap');
+    if (!currentGrafSector) {
+      chartsWrap.style.display = 'none';
+      mensajeDiv.style.display = 'block';
+    } else {
+      mensajeDiv.style.display = 'none';
+      chartsWrap.style.display = 'grid';
+      params.forEach(p => {
+        const lg = getLinea(goteo, p);
+        const ld = getLinea(drenaje, p);
+        const fechas = [...new Set([...lg.labels, ...ld.labels])].sort();
+        const serie = (linea) => fechas.map(f => { const i = linea.labels.indexOf(f); return i >= 0 ? linea.values[i] : null; });
+        mkChart('chartComp'+p, 'line', fechas, [
+          { label: 'Goteo',   data: serie(lg), borderColor: '#4caf50', backgroundColor: '#4caf5022', tension: 0.4, pointRadius: 3, fill: false, spanGaps: true },
+          { label: 'Drenaje', data: serie(ld), borderColor: '#ab47bc', backgroundColor: '#ab47bc22', tension: 0.4, pointRadius: 3, fill: false, spanGaps: true },
+        ]);
+      });
+    }
+  }
+
   if (currentGrafView === 'general') {
     // Todos por dia
     const d = getDias(base);
@@ -1696,7 +1740,7 @@ function renderAlertas() {
         <strong>${a.param}</strong> — ${a.msg}
         <br><span style="color:var(--muted);font-size:11px">${a.tipo} · ${a.equipo || ''} · ${a.sector || ''}</span>
       </div>
-      <div class="alert-time">${a.fecha || ''}</div>
+      <div class="alert-time">${formatFecha(a.fecha) || ''}</div>
     </div>
   `).join('');
 }
