@@ -692,16 +692,16 @@
                background:var(--surface);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;
                z-index:50;min-width:180px;box-shadow:0 8px 20px rgba(0,0,0,.4);">
             <label style="display:block;font-size:12px;color:var(--text);cursor:pointer;padding:6px 2px;">
-              <input type="checkbox" value="Goteo" onchange="cambiarTipoRegistroChecks()" style="margin-right:8px;vertical-align:middle;"><span style="vertical-align:middle;">Goteo</span>
+              <input type="checkbox" value="Goteo" onchange="cambiarTipoRegistroChecks()" style="margin-right:8px;vertical-align:middle;width:16px;min-width:16px;height:16px;padding:0;"><span style="vertical-align:middle;">Goteo</span>
             </label>
             <label style="display:block;font-size:12px;color:var(--text);cursor:pointer;padding:6px 2px;">
-              <input type="checkbox" value="Drenaje" onchange="cambiarTipoRegistroChecks()" style="margin-right:8px;vertical-align:middle;"><span style="vertical-align:middle;">Drenaje</span>
+              <input type="checkbox" value="Drenaje" onchange="cambiarTipoRegistroChecks()" style="margin-right:8px;vertical-align:middle;width:16px;min-width:16px;height:16px;padding:0;"><span style="vertical-align:middle;">Drenaje</span>
             </label>
             <label style="display:block;font-size:12px;color:var(--text);cursor:pointer;padding:6px 2px;">
-              <input type="checkbox" value="Humedad" onchange="cambiarTipoRegistroChecks()" style="margin-right:8px;vertical-align:middle;"><span style="vertical-align:middle;">Humedad</span>
+              <input type="checkbox" value="Humedad" onchange="cambiarTipoRegistroChecks()" style="margin-right:8px;vertical-align:middle;width:16px;min-width:16px;height:16px;padding:0;"><span style="vertical-align:middle;">Humedad</span>
             </label>
             <label style="display:block;font-size:12px;color:var(--text);cursor:pointer;padding:6px 2px;">
-              <input type="checkbox" value="PorcentajeDrenaje" onchange="cambiarTipoRegistroChecks()" style="margin-right:8px;vertical-align:middle;"><span style="vertical-align:middle;">% Drenaje</span>
+              <input type="checkbox" value="PorcentajeDrenaje" onchange="cambiarTipoRegistroChecks()" style="margin-right:8px;vertical-align:middle;width:16px;min-width:16px;height:16px;padding:0;"><span style="vertical-align:middle;">% Drenaje</span>
             </label>
           </div>
         </div>
@@ -1188,7 +1188,7 @@ function poblarChecksFecha(panelId, triggerTextId, onChangeFn) {
   const fechasDisponibles = [...new Set(DATOS.map(r => r.fecha).filter(Boolean))].sort().reverse();
   panel.innerHTML = fechasDisponibles.map(f => `
     <label style="display:block;font-size:12px;color:var(--text);cursor:pointer;padding:5px 2px;white-space:nowrap;">
-      <input type="checkbox" value="${f}" onchange="${onChangeFn}()" style="margin-right:8px;vertical-align:middle;" ${marcadasAntes.includes(f) ? 'checked' : ''}><span style="vertical-align:middle;">${nombreFechaCorta(f)}</span>
+      <input type="checkbox" value="${f}" onchange="${onChangeFn}()" style="margin-right:8px;vertical-align:middle;width:16px;min-width:16px;height:16px;padding:0;" ${marcadasAntes.includes(f) ? 'checked' : ''}><span style="vertical-align:middle;">${nombreFechaCorta(f)}</span>
     </label>`).join('') || '<div style="color:var(--muted);font-size:12px;">Sin fechas cargadas</div>';
   const seleccionadas = [...panel.querySelectorAll('input:checked')].map(c => c.value);
   const triggerText = document.getElementById(triggerTextId);
