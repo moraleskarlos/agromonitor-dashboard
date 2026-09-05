@@ -407,6 +407,11 @@
 
   <!-- TAB: RESUMEN -->
   <div id="tab-resumen" class="tab-content active">
+    <div class="card" style="margin-bottom:18px;">
+      <div id="bienvenidaSaludo" style="color:var(--text);font-size:18px;font-weight:800;">Hola 👋</div>
+      <div id="bienvenidaFecha" style="color:var(--muted);font-size:12px;margin-top:2px;"></div>
+      <div id="bienvenidaAlertas" style="margin-top:10px;font-size:13px;font-weight:600;"></div>
+    </div>
     <div class="kpi-grid" id="kpiGrid">
       <div class="loading"><div class="spinner"></div><br>Cargando datos...</div>
     </div>
@@ -858,6 +863,7 @@ function aplicarFiltros() {
   actualizarRegMeses();
   actualizarRegFechas();
   actualizarRegSectores();
+  renderBienvenida();
   renderKPIs();
   renderSemaforos();
   renderTabla();
@@ -1096,6 +1102,52 @@ function humItem(nombre, valor) {
     <div class="sem-name">${nombre}</div>
     <div class="sem-value">${v}</div>
   </div>`;
+}
+
+// ── MENSAJE DE BIENVENIDA (saludo + fecha + resumen de alertas del día) ────
+function contarAlertasHoy() {
+  const hoy = new Date().toISOString().split('T')[0];
+  const params = ['pH','CE','Nitratos','Potasio','Calcio','Sodio','PorcentajeDrenaje'];
+  const conteo = { Goteo: 0, Drenaje: 0, PorcentajeDrenaje: 0 };
+  DATOS.filter(r => r.fecha === hoy && r.tipo !== 'Humedad').forEach(r => {
+    params.forEach(p => {
+      if (r[p] === undefined || r[p] === '' || r[p] === null) return;
+      const estado = getEstado(p, r[p]);
+      if ((estado === 'danger' || estado === 'warn') && conteo[r.tipo] !== undefined) conteo[r.tipo]++;
+    });
+  });
+  return conteo;
+}
+
+function renderBienvenida() {
+  const hora = new Date().getHours();
+  const saludo = hora < 12 ? 'Buenos días' : hora < 19 ? 'Buenas tardes' : 'Buenas noches';
+  const nombre = (ME.nombre || '').split(' ')[0];
+  const hoyStr = formatFecha(new Date().toISOString().split('T')[0]);
+
+  document.getElementById('bienvenidaSaludo').textContent = `${saludo}${nombre ? ', ' + nombre : ''} 👋`;
+  document.getElementById('bienvenidaFecha').textContent = `Hoy es ${hoyStr}`;
+
+  const conteo = contarAlertasHoy();
+  const partes = [];
+  if (conteo.Drenaje) partes.push(`${conteo.Drenaje} en Drenaje`);
+  if (conteo.Goteo) partes.push(`${conteo.Goteo} en Goteo`);
+  if (conteo.PorcentajeDrenaje) partes.push(`${conteo.PorcentajeDrenaje} en % Drenaje`);
+  const total = conteo.Goteo + conteo.Drenaje + conteo.PorcentajeDrenaje;
+
+  const alertaDiv = document.getElementById('bienvenidaAlertas');
+  if (total > 0) {
+    alertaDiv.innerHTML = `⚠️ <span style="color:var(--warn)">Tenés ${total} alerta${total > 1 ? 's' : ''} hoy</span> — ${partes.join(', ')} <span style="color:var(--muted);font-weight:400;font-size:11px;">(tocá para ver)</span>`;
+    alertaDiv.style.cursor = 'pointer';
+    alertaDiv.onclick = () => {
+      const btnAlertas = document.querySelector('.tab[onclick*="alertas"]');
+      if (btnAlertas) btnAlertas.click();
+    };
+  } else {
+    alertaDiv.innerHTML = `<span style="color:var(--ok)">✓ Todo dentro de rango hoy</span>`;
+    alertaDiv.style.cursor = 'default';
+    alertaDiv.onclick = null;
+  }
 }
 
 function renderSemaforos() {
