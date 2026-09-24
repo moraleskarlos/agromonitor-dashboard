@@ -1087,7 +1087,7 @@ function getEstado(param, valor) {
 
 function semItem(param, valor) {
   const estado = getEstado(param, valor);
-  const v = valor !== '' && valor !== null && valor !== undefined ? parseFloat(valor).toFixed(2) : '—';
+  const v = valor !== '' && valor !== null && valor !== undefined ? fmtComma(parseFloat(valor)) : '—';
   const badge = estado ? `<div class="sem-badge badge-${estado}">${estado === 'ok' ? '✓ OK' : estado === 'warn' ? '⚠ ALERTA' : '✕ FUERA'}</div>` : '';
   return `<div class="sem-item">
     <div class="sem-name">${nombreParam(param)}</div>
@@ -1259,16 +1259,21 @@ function renderTabla() {
   else if (currentRegMes) registros = registros.filter(r => (r.fecha || '').slice(0, 7) === currentRegMes);
   if (currentRegSector) registros = registros.filter(r => r.sector === currentRegSector);
 
-  // Orden: por Fecha primero (más reciente arriba, agrupando cada día), después por Sector, y dentro de eso por Hilera (Humedad) o por Hora (resto)
+  // Orden: por Tipo primero (sin mezclar Goteo/Drenaje/Humedad/% Drenaje entre sí),
+  // después por Fecha ascendente (más antiguo arriba), después por Sector, y dentro de eso por Hilera (Humedad) o por Hora (resto)
+  const TIPO_ORDEN = { Goteo: 0, Drenaje: 1, Humedad: 2, PorcentajeDrenaje: 3 };
   registros = [...registros].sort((a, b) => {
-    const fa = (b.fecha || '').localeCompare(a.fecha || ''); // más reciente primero
+    const ta = TIPO_ORDEN[a.tipo] ?? 99;
+    const tb = TIPO_ORDEN[b.tipo] ?? 99;
+    if (ta !== tb) return ta - tb;
+    const fa = (a.fecha || '').localeCompare(b.fecha || ''); // más antiguo primero
     if (fa !== 0) return fa;
     const sa = (a.sector || '').localeCompare(b.sector || '', 'es', { numeric: true });
     if (sa !== 0) return sa;
-    if (a.tipo === 'Humedad' || b.tipo === 'Humedad') {
+    if (a.tipo === 'Humedad') {
       return (a.hilera || 0) - (b.hilera || 0);
     }
-    return (b.hora || '').localeCompare(a.hora || ''); // más reciente primero dentro del sector
+    return (a.hora || '').localeCompare(b.hora || ''); // más antiguo primero dentro del sector
   });
 
   if (tipoSel === 'Humedad') {
@@ -1350,13 +1355,18 @@ function renderTabla() {
   }).join('');
 }
 
+// Coma decimal en vez de punto, para tablas/tarjetas/alertas/Excel — NO se usa dentro de los gráficos (Chart.js sigue con punto)
+function fmtComma(v, decimales = 2) {
+  return v.toFixed(decimales).replace('.', ',');
+}
+
 function fmtVal(val, param) {
   if (val === '' || val === null || val === undefined) return '<span style="color:var(--dim)">—</span>';
   const v = parseFloat(val);
   if (isNaN(v)) return '<span style="color:var(--dim)">—</span>';
   const estado = getEstado(param, v);
   const color = estado === 'danger' ? 'var(--danger)' : estado === 'warn' ? 'var(--warn)' : 'var(--text)';
-  return `<span style="color:${color};font-weight:${estado !== 'ok' ? '700' : '400'}">${v.toFixed(2)}</span>`;
+  return `<span style="color:${color};font-weight:${estado !== 'ok' ? '700' : '400'}">${fmtComma(v)}</span>`;
 }
 
 // ── GRÁFICOS ──────────────────────────────────────────────────────────────────
@@ -1769,7 +1779,7 @@ function renderAlertas() {
     params.forEach(p => {
       const estado = getEstado(p, r[p]);
       if (estado === 'danger' || estado === 'warn') {
-        const v = parseFloat(r[p]).toFixed(2);
+        const v = fmtComma(parseFloat(r[p]));
         const rango = RANGOS[p];
         let msg = '';
         if (parseFloat(r[p]) < (rango.alerta_baja || rango.min)) msg = `Valor muy bajo (${v})`;
@@ -1849,6 +1859,29 @@ async function descargarExcel() {
   wb.creator = 'FertiMonitor';
   wb.created = new Date();
 
+  // Mismo orden que la tabla de Registros: Tipo (si corresponde) → Fecha ascendente → Sector → Hilera/Hora
+  const TIPO_ORDEN_XLS = { Goteo: 0, Drenaje: 1, Humedad: 2, PorcentajeDrenaje: 3 };
+  function ordenarParaExcel(lista, agruparPorTipo) {
+    return [...lista].sort((a, b) => {
+      if (agruparPorTipo) {
+        const ta = TIPO_ORDEN_XLS[a.tipo] ?? 99, tb = TIPO_ORDEN_XLS[b.tipo] ?? 99;
+        if (ta !== tb) return ta - tb;
+      }
+      const fa = (a.fecha || '').localeCompare(b.fecha || '');
+      if (fa !== 0) return fa;
+      const sa = (a.sector || '').localeCompare(b.sector || '', 'es', { numeric: true });
+      if (sa !== 0) return sa;
+      if (a.tipo === 'Humedad') return (a.hilera || 0) - (b.hilera || 0);
+      return (a.hora || '').localeCompare(b.hora || '');
+    });
+  }
+  // Número → texto con coma decimal; vacío/no-numérico → ''
+  function numXls(v) {
+    if (v === '' || v === null || v === undefined) return '';
+    const n = parseFloat(v);
+    return isNaN(n) ? '' : fmtComma(n);
+  }
+
   // Paleta tenue, consistente con los colores que ya usa el dashboard
   const PALETA = {
     todos:   { header: 'FF1E3D22', text: 'FFE8F5E9' }, // verde oscuro neutro
@@ -1879,16 +1912,16 @@ async function descargarExcel() {
   ];
   const coloresPorTipo = { Goteo: 'FFDCEDC8', Drenaje: 'FFE6D6F5', Humedad: 'FFFFF0BF', PorcentajeDrenaje: 'FFDCEEFB' };
   const etiquetaTipo = { PorcentajeDrenaje: '% Drenaje' };
-  FILTRADOS.forEach(r => {
+  ordenarParaExcel(FILTRADOS, true).forEach(r => {
     const isHum = r.tipo === 'Humedad';
     const isPct = r.tipo === 'PorcentajeDrenaje';
     const row = wsTodos.addRow([
-      etiquetaTipo[r.tipo] || r.tipo || '', r.fecha||'', r.hora||'', r.trabajador||'', r.equipo||'', r.sector||'',
-      (isHum||isPct) ? '' : (r.pH||''), (isHum||isPct) ? '' : (r.CE||''), (isHum||isPct) ? '' : (r.Nitratos||''),
-      (isHum||isPct) ? '' : (r.Potasio||''), (isHum||isPct) ? '' : (r.Calcio||''), (isHum||isPct) ? '' : (r.Sodio||''),
-      isHum ? (r.hilera||'') : '', isHum ? (r.humedad_inicial||'') : '',
-      isHum ? (r.humedad_media||'') : '', isHum ? (r.humedad_final||'') : '',
-      isPct ? (r.PorcentajeDrenaje||'') : ''
+      etiquetaTipo[r.tipo] || r.tipo || '', formatFecha(r.fecha) || '', r.hora || '', r.trabajador || '', r.equipo || '', r.sector || '',
+      (isHum||isPct) ? '' : numXls(r.pH), (isHum||isPct) ? '' : numXls(r.CE), (isHum||isPct) ? '' : numXls(r.Nitratos),
+      (isHum||isPct) ? '' : numXls(r.Potasio), (isHum||isPct) ? '' : numXls(r.Calcio), (isHum||isPct) ? '' : numXls(r.Sodio),
+      isHum ? (r.hilera || '') : '', isHum ? numXls(r.humedad_inicial) : '',
+      isHum ? numXls(r.humedad_media) : '', isHum ? numXls(r.humedad_final) : '',
+      isPct ? numXls(r.PorcentajeDrenaje) : ''
     ]);
     const colorFila = coloresPorTipo[r.tipo];
     if (colorFila) {
@@ -1902,16 +1935,16 @@ async function descargarExcel() {
   const headersMedicion = ['Fecha','Hora','Trabajador','Equipo','Sector','pH','CE','Nitratos','Potasio','Calcio','Sodio'];
   headerRow(wsGoteo, headersMedicion, PALETA.goteo);
   wsGoteo.columns = [{width:12},{width:9},{width:22},{width:18},{width:16},{width:8},{width:8},{width:10},{width:10},{width:10},{width:10}];
-  FILTRADOS.filter(r => r.tipo === 'Goteo').forEach(r => {
-    wsGoteo.addRow([r.fecha||'', r.hora||'', r.trabajador||'', r.equipo||'', r.sector||'', r.pH||'', r.CE||'', r.Nitratos||'', r.Potasio||'', r.Calcio||'', r.Sodio||'']);
+  ordenarParaExcel(FILTRADOS.filter(r => r.tipo === 'Goteo'), false).forEach(r => {
+    wsGoteo.addRow([formatFecha(r.fecha) || '', r.hora || '', r.trabajador || '', r.equipo || '', r.sector || '', numXls(r.pH), numXls(r.CE), numXls(r.Nitratos), numXls(r.Potasio), numXls(r.Calcio), numXls(r.Sodio)]);
   });
 
   // ── Hoja 3 — Drenaje ──
   const wsDrenaje = wb.addWorksheet('Drenaje');
   headerRow(wsDrenaje, headersMedicion, PALETA.drenaje);
   wsDrenaje.columns = [{width:12},{width:9},{width:22},{width:18},{width:16},{width:8},{width:8},{width:10},{width:10},{width:10},{width:10}];
-  FILTRADOS.filter(r => r.tipo === 'Drenaje').forEach(r => {
-    wsDrenaje.addRow([r.fecha||'', r.hora||'', r.trabajador||'', r.equipo||'', r.sector||'', r.pH||'', r.CE||'', r.Nitratos||'', r.Potasio||'', r.Calcio||'', r.Sodio||'']);
+  ordenarParaExcel(FILTRADOS.filter(r => r.tipo === 'Drenaje'), false).forEach(r => {
+    wsDrenaje.addRow([formatFecha(r.fecha) || '', r.hora || '', r.trabajador || '', r.equipo || '', r.sector || '', numXls(r.pH), numXls(r.CE), numXls(r.Nitratos), numXls(r.Potasio), numXls(r.Calcio), numXls(r.Sodio)]);
   });
 
   // ── Hoja 4 — Humedad ──
@@ -1919,8 +1952,8 @@ async function descargarExcel() {
   const headersHumedad = ['Fecha','Hora','Trabajador','Equipo','Sector','Hilera','H. Inicial','H. Media','H. Final'];
   headerRow(wsHumedad, headersHumedad, PALETA.humedad);
   wsHumedad.columns = [{width:12},{width:9},{width:22},{width:18},{width:16},{width:8},{width:12},{width:12},{width:12}];
-  FILTRADOS.filter(r => r.tipo === 'Humedad').forEach(r => {
-    wsHumedad.addRow([r.fecha||'', r.hora||'', r.trabajador||'', r.equipo||'', r.sector||'', r.hilera||'', r.humedad_inicial||'', r.humedad_media||'', r.humedad_final||'']);
+  ordenarParaExcel(FILTRADOS.filter(r => r.tipo === 'Humedad'), false).forEach(r => {
+    wsHumedad.addRow([formatFecha(r.fecha) || '', r.hora || '', r.trabajador || '', r.equipo || '', r.sector || '', r.hilera || '', numXls(r.humedad_inicial), numXls(r.humedad_media), numXls(r.humedad_final)]);
   });
 
   // ── Hoja 5 — % Drenaje ──
@@ -1928,8 +1961,8 @@ async function descargarExcel() {
   const headersPct = ['Fecha','Hora','Trabajador','Equipo','Sector','% Drenaje'];
   headerRow(wsPct, headersPct, PALETA.pctdrenaje);
   wsPct.columns = [{width:12},{width:9},{width:22},{width:18},{width:16},{width:12}];
-  FILTRADOS.filter(r => r.tipo === 'PorcentajeDrenaje').forEach(r => {
-    wsPct.addRow([r.fecha||'', r.hora||'', r.trabajador||'', r.equipo||'', r.sector||'', r.PorcentajeDrenaje||'']);
+  ordenarParaExcel(FILTRADOS.filter(r => r.tipo === 'PorcentajeDrenaje'), false).forEach(r => {
+    wsPct.addRow([formatFecha(r.fecha) || '', r.hora || '', r.trabajador || '', r.equipo || '', r.sector || '', numXls(r.PorcentajeDrenaje)]);
   });
 
   // Descargar
