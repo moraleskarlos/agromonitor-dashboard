@@ -220,6 +220,7 @@
     .badge-drenaje { background: #9c27b022; color: #ce93d8; }
     .badge-humedad { background: #ffd54f22; color: var(--warn); }
     .badge-pctdrenaje { background: #42a5f522; color: #42a5f5; }
+    .badge-lisimetro { background: #2e6e8e22; color: #5a9bb8; }
 
     /* ALERTAS */
     .alert-item {
@@ -444,6 +445,13 @@
           <div class="empty">Sin datos</div>
         </div>
       </div>
+      <div class="card">
+        <div class="card-title">🧪 Últimos valores — Lisímetro</div>
+        <div class="ult-fecha" id="fechaLisimetro"></div>
+        <div class="semaforo-grid" id="semaforoLisimetro">
+          <div class="empty">Sin datos</div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -512,7 +520,7 @@
   <!-- TAB: GRÁFICOS -->
   <div id="tab-graficos" class="tab-content">
     <!-- Selector de vista -->
-    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center;justify-content:space-between;">
+    <div style="display:flex;gap:8px;margin-bottom:6px;flex-wrap:wrap;align-items:center;justify-content:space-between;">
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <button class="graf-btn active" onclick="setGrafView('goteo',this)">💧 Goteo</button>
         <button class="graf-btn" onclick="setGrafView('drenaje',this)">🚿 Drenaje</button>
@@ -520,36 +528,10 @@
         <button class="graf-btn" onclick="setGrafView('general',this)">📊 General</button>
         <button class="graf-btn" onclick="setGrafView('pctdrenaje',this)">📉 % Drenaje</button>
         <button class="graf-btn" onclick="setGrafView('comparacion',this)">🔀 Goteo vs Drenaje</button>
-      </div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;">
-        <div class="filter-group" style="max-width:200px;">
-          <label>Mes (solo gráficos)</label>
-          <select id="grafMesSelect" onchange="cambiarGrafMes()">
-            <option value="">Todos los meses</option>
-          </select>
-        </div>
-        <div class="filter-group" style="max-width:200px;position:relative;">
-          <label>Fecha específica</label>
-          <button type="button" id="grafFechaTrigger" onclick="toggleDropdown(event,'grafFechaChecks')"
-            style="display:flex;justify-content:space-between;align-items:center;width:100%;box-sizing:border-box;
-                   background:var(--surface);border:1.5px solid var(--border);border-radius:8px;
-                   padding:9px 12px;color:var(--text);font-size:13px;cursor:pointer;">
-            <span id="grafFechaTriggerText">Todas las fechas</span>
-            <span style="color:var(--muted);font-size:11px;">▾</span>
-          </button>
-          <div id="grafFechaChecks" style="display:none;position:absolute;top:100%;left:0;margin-top:4px;
-               background:var(--surface);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;
-               z-index:50;min-width:170px;max-height:280px;overflow-y:auto;box-shadow:0 8px 20px rgba(0,0,0,.4);">
-          </div>
-        </div>
-        <div class="filter-group" style="max-width:220px;">
-          <label>Sector (solo gráficos)</label>
-          <select id="grafSectorSelect" onchange="cambiarGrafSector()">
-            <option value="">Todos los sectores</option>
-          </select>
-        </div>
+        <button class="graf-btn" onclick="setGrafView('lisimetro',this)">🧪 Lisímetro</button>
       </div>
     </div>
+    <div id="grafEquipoSubtitulo" style="color:var(--muted);font-size:12px;margin-bottom:16px;font-weight:600;"></div>
 
     <!-- Vista Goteo / Drenaje -->
     <div id="grafView-goteo" class="graf-view">
@@ -646,6 +628,22 @@
         <div class="card"><div class="card-title">📈 Sodio — Goteo vs Drenaje</div><div class="chart-container" style="height:220px"><canvas id="chartCompSodio"></canvas></div></div>
       </div>
     </div>
+
+    <!-- Vista Lisímetro -->
+    <div id="grafView-lisimetro" class="graf-view" style="display:none">
+      <div class="grid2">
+        <div class="card"><div class="card-title">📅 Registros por día</div><div class="chart-container"><canvas id="chartLisimetroDias"></canvas></div></div>
+        <div class="card"><div class="card-title">🗺️ Top sectores</div><div class="chart-container"><canvas id="chartLisimetroSectores"></canvas></div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;">
+        <div class="card"><div class="card-title">📈 pH</div><div class="chart-container" style="height:220px"><canvas id="chartLisimetropH"></canvas></div></div>
+        <div class="card"><div class="card-title">📈 CE</div><div class="chart-container" style="height:220px"><canvas id="chartLisimetroCE"></canvas></div></div>
+        <div class="card"><div class="card-title">📈 Nitratos</div><div class="chart-container" style="height:220px"><canvas id="chartLisimetroNitratos"></canvas></div></div>
+        <div class="card"><div class="card-title">📈 Potasio</div><div class="chart-container" style="height:220px"><canvas id="chartLisimetroPotasio"></canvas></div></div>
+        <div class="card"><div class="card-title">📈 Calcio</div><div class="chart-container" style="height:220px"><canvas id="chartLisimetroCalcio"></canvas></div></div>
+        <div class="card"><div class="card-title">📈 Sodio</div><div class="chart-container" style="height:220px"><canvas id="chartLisimetroSodio"></canvas></div></div>
+      </div>
+    </div>
   </div>
 
   <!-- TAB: ALERTAS -->
@@ -707,6 +705,9 @@
             </label>
             <label style="display:block;font-size:12px;color:var(--text);cursor:pointer;padding:6px 2px;">
               <input type="checkbox" value="PorcentajeDrenaje" onchange="cambiarTipoRegistroChecks()" style="margin-right:8px;vertical-align:middle;width:16px;min-width:16px;height:16px;padding:0;"><span style="vertical-align:middle;">% Drenaje</span>
+            </label>
+            <label style="display:block;font-size:12px;color:var(--text);cursor:pointer;padding:6px 2px;">
+              <input type="checkbox" value="Lisimetro" onchange="cambiarTipoRegistroChecks()" style="margin-right:8px;vertical-align:middle;width:16px;min-width:16px;height:16px;padding:0;"><span style="vertical-align:middle;">Lisímetro</span>
             </label>
           </div>
         </div>
@@ -856,10 +857,7 @@ function aplicarFiltros() {
   });
 
   actualizarSectores();
-  actualizarGrafSectores();
   actualizarGrafHileras();
-  actualizarGrafMeses();
-  actualizarGrafFechas();
   actualizarRegMeses();
   actualizarRegFechas();
   actualizarRegSectores();
@@ -1108,7 +1106,7 @@ function humItem(nombre, valor) {
 function contarAlertasHoy() {
   const hoy = new Date().toISOString().split('T')[0];
   const params = ['pH','CE','Nitratos','Potasio','Calcio','Sodio','PorcentajeDrenaje'];
-  const conteo = { Goteo: 0, Drenaje: 0, PorcentajeDrenaje: 0 };
+  const conteo = { Goteo: 0, Drenaje: 0, PorcentajeDrenaje: 0, Lisimetro: 0 };
   DATOS.filter(r => r.fecha === hoy && r.tipo !== 'Humedad').forEach(r => {
     params.forEach(p => {
       if (r[p] === undefined || r[p] === '' || r[p] === null) return;
@@ -1133,7 +1131,8 @@ function renderBienvenida() {
   if (conteo.Drenaje) partes.push(`${conteo.Drenaje} en Drenaje`);
   if (conteo.Goteo) partes.push(`${conteo.Goteo} en Goteo`);
   if (conteo.PorcentajeDrenaje) partes.push(`${conteo.PorcentajeDrenaje} en % Drenaje`);
-  const total = conteo.Goteo + conteo.Drenaje + conteo.PorcentajeDrenaje;
+  if (conteo.Lisimetro) partes.push(`${conteo.Lisimetro} en Lisímetro`);
+  const total = conteo.Goteo + conteo.Drenaje + conteo.PorcentajeDrenaje + conteo.Lisimetro;
 
   const alertaDiv = document.getElementById('bienvenidaAlertas');
   if (total > 0) {
@@ -1156,12 +1155,14 @@ function renderSemaforos() {
   const ultDrenaje = FILTRADOS.filter(r => r.tipo === 'Drenaje').slice(-1)[0];
   const ultHumedad = FILTRADOS.filter(r => r.tipo === 'Humedad').slice(-1)[0];
   const ultPctDrenaje = FILTRADOS.filter(r => r.tipo === 'PorcentajeDrenaje').slice(-1)[0];
+  const ultLisimetro = FILTRADOS.filter(r => r.tipo === 'Lisimetro').slice(-1)[0];
 
   const fmtFechaHora = r => r.hora ? `Último registro: ${formatFecha(r.fecha)} · ${r.hora}` : `Último registro: ${formatFecha(r.fecha)}`;
   document.getElementById('fechaGoteo').textContent = ultGoteo ? fmtFechaHora(ultGoteo) : '';
   document.getElementById('fechaDrenaje').textContent = ultDrenaje ? fmtFechaHora(ultDrenaje) : '';
   document.getElementById('fechaHumedad').textContent = ultHumedad ? fmtFechaHora(ultHumedad) : '';
   document.getElementById('fechaPctDrenaje').textContent = ultPctDrenaje ? fmtFechaHora(ultPctDrenaje) : '';
+  document.getElementById('fechaLisimetro').textContent = ultLisimetro ? fmtFechaHora(ultLisimetro) : '';
 
   document.getElementById('semaforoGoteo').innerHTML = ultGoteo
     ? params.map(p => semItem(p, ultGoteo[p])).join('')
@@ -1183,6 +1184,10 @@ function renderSemaforos() {
   document.getElementById('semaforoPctDrenaje').innerHTML = ultPctDrenaje
     ? semItem('PorcentajeDrenaje', ultPctDrenaje.PorcentajeDrenaje)
     : '<div class="empty">Sin registros de % Drenaje</div>';
+
+  document.getElementById('semaforoLisimetro').innerHTML = ultLisimetro
+    ? params.map(p => semItem(p, ultLisimetro[p])).join('')
+    : '<div class="empty">Sin registros de Lisímetro</div>';
 }
 
 // ── TABLA DE RANGOS (dinámica, refleja ediciones) ───────────────────────────
@@ -1202,7 +1207,7 @@ function renderTablaRangos() {
 }
 
 // ── DESPLEGABLES CON CHECKBOXES (Ver medición, Fecha específica en Registros y Gráficos) ──
-const PANELES_DESPLEGABLES = ['tipoRegistroChecks', 'regFechaChecks', 'grafFechaChecks'];
+const PANELES_DESPLEGABLES = ['tipoRegistroChecks', 'regFechaChecks'];
 
 function toggleDropdown(e, panelId) {
   if (e) e.stopPropagation();
@@ -1222,7 +1227,7 @@ document.addEventListener('click', (e) => {
 });
 
 function actualizarTipoRegistroTrigger() {
-  const nombres = { Goteo: 'Goteo', Drenaje: 'Drenaje', Humedad: 'Humedad', PorcentajeDrenaje: '% Drenaje' };
+  const nombres = { Goteo: 'Goteo', Drenaje: 'Drenaje', Humedad: 'Humedad', PorcentajeDrenaje: '% Drenaje', Lisimetro: 'Lisímetro' };
   const marcados = [...document.querySelectorAll('#tipoRegistroChecks input:checked')].map(c => nombres[c.value]);
   document.getElementById('tipoRegistroTriggerText').textContent = marcados.length ? marcados.join(', ') : 'Todos';
 }
@@ -1259,15 +1264,15 @@ function renderTabla() {
   else if (currentRegMes) registros = registros.filter(r => (r.fecha || '').slice(0, 7) === currentRegMes);
   if (currentRegSector) registros = registros.filter(r => r.sector === currentRegSector);
 
-  // Orden: por Tipo primero (sin mezclar Goteo/Drenaje/Humedad/% Drenaje entre sí),
-  // después por Fecha ascendente (más antiguo arriba), después por Sector, y dentro de eso por Hilera (Humedad) o por Hora (resto)
-  const TIPO_ORDEN = { Goteo: 0, Drenaje: 1, Humedad: 2, PorcentajeDrenaje: 3 };
+  // Orden: por Fecha ascendente primero (más antiguo arriba), después por Tipo (sin mezclar Goteo/Drenaje/Humedad/% Drenaje/Lisímetro entre sí),
+  // después por Sector, y dentro de eso por Hilera (Humedad) o por Hora (resto)
+  const TIPO_ORDEN = { Goteo: 0, Drenaje: 1, Humedad: 2, PorcentajeDrenaje: 3, Lisimetro: 4 };
   registros = [...registros].sort((a, b) => {
+    const fa = (a.fecha || '').localeCompare(b.fecha || ''); // más antiguo primero
+    if (fa !== 0) return fa;
     const ta = TIPO_ORDEN[a.tipo] ?? 99;
     const tb = TIPO_ORDEN[b.tipo] ?? 99;
     if (ta !== tb) return ta - tb;
-    const fa = (a.fecha || '').localeCompare(b.fecha || ''); // más antiguo primero
-    if (fa !== 0) return fa;
     const sa = (a.sector || '').localeCompare(b.sector || '', 'es', { numeric: true });
     if (sa !== 0) return sa;
     if (a.tipo === 'Humedad') {
@@ -1278,7 +1283,7 @@ function renderTabla() {
 
   if (tipoSel === 'Humedad') {
     thead.innerHTML = `<tr><th>Fecha</th><th>Hora</th><th>Trabajador</th><th>Equipo</th><th>Sector</th><th>Hilera</th><th>H. Inicial</th><th>H. Media</th><th>H. Final</th></tr>`;
-  } else if (tipoSel === 'Goteo' || tipoSel === 'Drenaje') {
+  } else if (tipoSel === 'Goteo' || tipoSel === 'Drenaje' || tipoSel === 'Lisimetro') {
     thead.innerHTML = `<tr><th>Fecha</th><th>Hora</th><th>Trabajador</th><th>Equipo</th><th>Sector</th><th>pH</th><th>CE</th><th>Nitratos</th><th>Potasio</th><th>Calcio</th><th>Sodio</th></tr>`;
   } else if (tipoSel === 'PorcentajeDrenaje') {
     thead.innerHTML = `<tr><th>Fecha</th><th>Hora</th><th>Trabajador</th><th>Equipo</th><th>Sector</th><th>% Drenaje</th></tr>`;
@@ -1309,7 +1314,7 @@ function renderTabla() {
         <td>${r.humedad_final ?? '—'}</td>
       </tr>`;
     }
-    if (tipoSel === 'Goteo' || tipoSel === 'Drenaje') {
+    if (tipoSel === 'Goteo' || tipoSel === 'Drenaje' || tipoSel === 'Lisimetro') {
       return `<tr data-id="${r.id || ''}">
         <td>${formatFecha(r.fecha) || '—'}</td>
         <td>${r.hora || '—'}</td>
@@ -1335,8 +1340,8 @@ function renderTabla() {
       </tr>`;
     }
     // Vista "Todos" (ninguno o varios tipos seleccionados a la vez)
-    const badgeClass = tipo === 'Goteo' ? 'badge-goteo' : tipo === 'Drenaje' ? 'badge-drenaje' : tipo === 'Humedad' ? 'badge-humedad' : 'badge-pctdrenaje';
-    const tipoLabel = isPctDrenaje ? '% Drenaje' : tipo;
+    const badgeClass = tipo === 'Goteo' ? 'badge-goteo' : tipo === 'Drenaje' ? 'badge-drenaje' : tipo === 'Humedad' ? 'badge-humedad' : tipo === 'Lisimetro' ? 'badge-lisimetro' : 'badge-pctdrenaje';
+    const tipoLabel = isPctDrenaje ? '% Drenaje' : tipo === 'Lisimetro' ? 'Lisímetro' : tipo;
     return `<tr data-id="${r.id || ''}">
       <td><span class="badge ${badgeClass}">${tipoLabel}</span></td>
       <td>${formatFecha(r.fecha) || '—'}</td>
@@ -1371,7 +1376,12 @@ function fmtVal(val, param) {
 
 // ── GRÁFICOS ──────────────────────────────────────────────────────────────────
 let currentGrafView = 'goteo';
-let currentGrafSector = '';
+
+// El Sector "de Gráficos" ya no es un filtro aparte: se lee directo del filtro general de arriba
+function grafSectorActual() {
+  const sel = document.getElementById('filtroSector');
+  return sel ? sel.value : '';
+}
 
 function setGrafView(view, btn) {
   currentGrafView = view;
@@ -1382,25 +1392,7 @@ function setGrafView(view, btn) {
   renderGraficos();
 }
 
-function cambiarGrafSector() {
-  currentGrafSector = document.getElementById('grafSectorSelect').value;
-  actualizarGrafHileras();
-  renderGraficos();
-}
-
-function actualizarGrafSectores() {
-  const sel = document.getElementById('grafSectorSelect');
-  if (!sel) return;
-  const valorActual = sel.value;
-  const sectores = [...new Set(DATOS.map(r => r.sector).filter(Boolean))].sort();
-  sel.innerHTML = '<option value="">Todos los sectores</option>' +
-    sectores.map(s => `<option value="${s}">${s}</option>`).join('');
-  // Mantener la selección previa si el sector sigue existiendo
-  if (sectores.includes(valorActual)) sel.value = valorActual;
-  else currentGrafSector = '';
-}
-
-// ── SELECTOR DE HILERA (solo disponible con un Sector ya elegido) ──────────
+// ── SELECTOR DE HILERA (solo disponible con un Sector ya elegido en el filtro general) ──
 let currentGrafHilera = '';
 function cambiarGrafHilera() {
   currentGrafHilera = document.getElementById('grafHileraSelect').value;
@@ -1409,7 +1401,8 @@ function cambiarGrafHilera() {
 function actualizarGrafHileras() {
   const sel = document.getElementById('grafHileraSelect');
   if (!sel) return;
-  if (!currentGrafSector) {
+  const sectorActual = grafSectorActual();
+  if (!sectorActual) {
     sel.innerHTML = '<option value="">Elegí un sector primero</option>';
     sel.disabled = true;
     currentGrafHilera = '';
@@ -1417,7 +1410,7 @@ function actualizarGrafHileras() {
   }
   const valorActual = sel.value;
   const hileras = [...new Set(
-    DATOS.filter(r => r.tipo === 'Humedad' && r.sector === currentGrafSector).map(r => r.hilera)
+    DATOS.filter(r => r.tipo === 'Humedad' && r.sector === sectorActual).map(r => r.hilera)
   )].filter(h => h !== undefined && h !== null && h !== '').sort((a,b) => Number(a) - Number(b));
   sel.disabled = false;
   sel.innerHTML = '<option value="">Elegí una hilera</option>' +
@@ -1426,7 +1419,7 @@ function actualizarGrafHileras() {
   else currentGrafHilera = '';
 }
 
-// ── SELECTORES DE MES (independientes, uno para Gráficos y otro para Registros) ──
+// ── SELECTOR DE MES (Registros) ──────────────────────────────────────────────
 const MESES_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
 function nombreMes(ym) {
@@ -1458,27 +1451,6 @@ function formatFecha(f) {
   return `${d}-${m}-${y}`;
 }
 function nombreFechaCorta(f) { return formatFecha(f); }
-
-let currentGrafMes = '';
-function cambiarGrafMes() {
-  currentGrafMes = document.getElementById('grafMesSelect').value;
-  renderGraficos();
-}
-function actualizarGrafMeses() {
-  const sel = document.getElementById('grafMesSelect');
-  if (!sel) return;
-  currentGrafMes = poblarSelectorMes(sel, mesActual());
-}
-
-// Fecha(s) específica(s): si hay alguna elegida, manda por sobre el Mes (más precisa)
-let currentGrafFechas = [];
-function cambiarGrafFecha() {
-  currentGrafFechas = poblarChecksFecha('grafFechaChecks', 'grafFechaTriggerText', 'cambiarGrafFecha');
-  renderGraficos();
-}
-function actualizarGrafFechas() {
-  currentGrafFechas = poblarChecksFecha('grafFechaChecks', 'grafFechaTriggerText', 'cambiarGrafFecha');
-}
 
 let currentRegMes = '';
 function cambiarRegMes() {
@@ -1530,7 +1502,17 @@ function mkChart(id, type, labels, datasets, opts = {}) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { labels: { color: '#6b9470', font: { size: 10 } } } },
+      plugins: {
+        legend: { labels: { color: '#6b9470', font: { size: 10 } } },
+        tooltip: {
+          callbacks: {
+            afterLabel: (context) => {
+              const obs = context.dataset && context.dataset.observaciones ? context.dataset.observaciones[context.dataIndex] : null;
+              return obs ? '📝 ' + obs : undefined;
+            }
+          }
+        }
+      },
       scales: type !== 'doughnut' ? {
         x: { ticks: { color: '#6b9470', font: { size: 9 } }, grid: { color: '#1e3d22' } },
         y: { ticks: { color: '#6b9470', font: { size: 9 } }, grid: { color: '#1e3d22' } }
@@ -1556,17 +1538,24 @@ function getSectores(data) {
 
 function getLinea(data, param) {
   const byFecha = {};
+  const obsByFecha = {};
   data.forEach(r => {
     const v = parseFloat(r[param]);
     if (!isNaN(v)) { if (!byFecha[r.fecha]) byFecha[r.fecha] = []; byFecha[r.fecha].push(v); }
+    if (r.observacion) { if (!obsByFecha[r.fecha]) obsByFecha[r.fecha] = []; obsByFecha[r.fecha].push(r.observacion); }
   });
   const labels = Object.keys(byFecha).sort();
-  return { labels, values: labels.map(l => byFecha[l].reduce((a,b)=>a+b,0)/byFecha[l].length) };
+  return {
+    labels,
+    values: labels.map(l => byFecha[l].reduce((a,b)=>a+b,0)/byFecha[l].length),
+    observaciones: labels.map(l => obsByFecha[l] ? obsByFecha[l].join('; ') : undefined)
+  };
 }
 
 // Igual que getLinea, pero agrupa por número de Hilera en vez de por fecha — solo tiene sentido dentro de un sector
 function getPorHilera(data, param) {
   const byHilera = {};
+  const obsByHilera = {};
   data.forEach(r => {
     const v = parseFloat(r[param]);
     const h = r.hilera;
@@ -1574,9 +1563,17 @@ function getPorHilera(data, param) {
       if (!byHilera[h]) byHilera[h] = [];
       byHilera[h].push(v);
     }
+    if (r.observacion && h !== undefined && h !== null && h !== '') {
+      if (!obsByHilera[h]) obsByHilera[h] = [];
+      obsByHilera[h].push(r.observacion);
+    }
   });
   const labels = Object.keys(byHilera).sort((a,b) => Number(a) - Number(b));
-  return { labels: labels.map(l => 'Hilera ' + l), values: labels.map(l => byHilera[l].reduce((a,b)=>a+b,0)/byHilera[l].length) };
+  return {
+    labels: labels.map(l => 'Hilera ' + l),
+    values: labels.map(l => byHilera[l].reduce((a,b)=>a+b,0)/byHilera[l].length),
+    observaciones: labels.map(l => obsByHilera[l] ? obsByHilera[l].join('; ') : undefined)
+  };
 }
 
 const COLORS = ['#ef5350','#42a5f5','#66bb6a','#ffa726','#ab47bc','#26c6da','#ffee58','#8d6e63','#ec407a','#26a69a'];
@@ -1587,14 +1584,17 @@ function getLineaPorSector(data, param) {
   const fechas = [...new Set(data.map(r => r.fecha).filter(Boolean))].sort();
   const datasets = sectores.map((sec, i) => {
     const porFecha = {};
+    const obsPorFecha = {};
     data.filter(r => r.sector === sec).forEach(r => {
       const v = parseFloat(r[param]);
       if (!isNaN(v)) { if (!porFecha[r.fecha]) porFecha[r.fecha] = []; porFecha[r.fecha].push(v); }
+      if (r.observacion) { if (!obsPorFecha[r.fecha]) obsPorFecha[r.fecha] = []; obsPorFecha[r.fecha].push(r.observacion); }
     });
     const color = COLORS[i % COLORS.length];
     return {
       label: sec,
       data: fechas.map(f => porFecha[f] ? porFecha[f].reduce((a,b)=>a+b,0)/porFecha[f].length : null),
+      observaciones: fechas.map(f => obsPorFecha[f] ? obsPorFecha[f].join('; ') : undefined),
       borderColor: color, backgroundColor: color + '22', tension: 0.4, pointRadius: 3, fill: false, spanGaps: true,
     };
   });
@@ -1602,18 +1602,22 @@ function getLineaPorSector(data, param) {
 }
 
 function renderGraficos() {
-  // Base local: respeta los filtros generales (FILTRADOS) + los selectores propios de esta pestaña
-  const base = FILTRADOS.filter(r => {
-    if (currentGrafSector && r.sector !== currentGrafSector) return false;
-    if (currentGrafFechas.length) { if (!currentGrafFechas.includes(r.fecha)) return false; }
-    else if (currentGrafMes && (r.fecha || '').slice(0, 7) !== currentGrafMes) return false;
-    return true;
-  });
+  // Actualiza el subtítulo de Equipo según el filtro general
+  const equipoSel = document.getElementById('filtroEquipo');
+  const subEquipo = document.getElementById('grafEquipoSubtitulo');
+  if (subEquipo) {
+    subEquipo.textContent = (equipoSel && equipoSel.value) ? `Equipo: ${equipoSel.value}` : 'Todos los equipos';
+  }
+
+  // Base: ya viene filtrada por el panel general de arriba (Tipo, Equipo, Sector, Fecha desde/hasta)
+  const base = FILTRADOS;
+  const sectorSel = grafSectorActual();
 
   const goteo       = base.filter(r => r.tipo === 'Goteo');
   const drenaje     = base.filter(r => r.tipo === 'Drenaje');
   const humedad     = base.filter(r => r.tipo === 'Humedad');
   const pctDrenaje  = base.filter(r => r.tipo === 'PorcentajeDrenaje');
+  const lisimetro   = base.filter(r => r.tipo === 'Lisimetro');
   const params  = ['pH','CE','Nitratos','Potasio','Calcio','Sodio'];
 
   if (currentGrafView === 'goteo') {
@@ -1623,10 +1627,10 @@ function renderGraficos() {
     mkChart('chartGoteoSectores', 'bar', s.labels, [{ label: 'Registros', data: s.values, backgroundColor: '#42a5f566', borderColor: '#42a5f5', borderWidth: 1 }], { indexAxis: 'y' });
     params.forEach(p => {
       let labels, datasets;
-      if (currentGrafSector) {
+      if (sectorSel) {
         const l = getLinea(goteo, p);
         labels = l.labels;
-        datasets = [{ label: p, data: l.values, borderColor: '#4caf50', backgroundColor: '#4caf5022', tension: 0.4, pointRadius: 3, fill: true }];
+        datasets = [{ label: p, data: l.values, observaciones: l.observaciones, borderColor: '#4caf50', backgroundColor: '#4caf5022', tension: 0.4, pointRadius: 3, fill: true }];
       } else {
         const lp = getLineaPorSector(goteo, p);
         labels = lp.labels;
@@ -1646,9 +1650,9 @@ function renderGraficos() {
     const s = getSectores(drenaje);
     mkChart('chartDrenajeSectores', 'bar', s.labels, [{ label: 'Registros', data: s.values, backgroundColor: '#42a5f566', borderColor: '#42a5f5', borderWidth: 1 }], { indexAxis: 'y' });
     params.forEach(p => {
-      if (currentGrafSector) {
+      if (sectorSel) {
         const l = getLinea(drenaje, p);
-        mkChart('chartDrenaje'+p, 'line', l.labels, [{ label: p, data: l.values, borderColor: '#ce93d8', backgroundColor: '#ce93d822', tension: 0.4, pointRadius: 3, fill: true }]);
+        mkChart('chartDrenaje'+p, 'line', l.labels, [{ label: p, data: l.values, observaciones: l.observaciones, borderColor: '#ce93d8', backgroundColor: '#ce93d822', tension: 0.4, pointRadius: 3, fill: true }]);
       } else {
         const lp = getLineaPorSector(drenaje, p);
         mkChart('chartDrenaje'+p, 'line', lp.labels, lp.datasets);
@@ -1661,13 +1665,13 @@ function renderGraficos() {
     mkChart('chartHumedadDias', 'bar', d.labels, [{ label: 'Registros', data: d.values, backgroundColor: '#ffd54f66', borderColor: '#ffd54f', borderWidth: 1 }]);
     const s = getSectores(humedad);
     mkChart('chartHumedadSectores', 'bar', s.labels, [{ label: 'Sectores', data: s.values, backgroundColor: '#ffd54f66', borderColor: '#ffd54f', borderWidth: 1 }], { indexAxis: 'y' });
-    const modoTexto = currentGrafSector ? '(por hilera)' : '(por fecha)';
+    const modoTexto = sectorSel ? '(por hilera)' : '(por fecha)';
     ['Inicial','Media','Final'].forEach(tipo => {
       const key = 'humedad_' + tipo.toLowerCase();
       // Con un sector elegido, se desglosa por Hilera (1 a 6), una color por hilera; sin sector, se agrupa por fecha (promedio general)
-      const l = currentGrafSector ? getPorHilera(humedad, key) : getLinea(humedad, key);
-      const colores = currentGrafSector ? l.labels.map((_, i) => COLORS[i % COLORS.length]) : '#ffd54f66';
-      const bordes  = currentGrafSector ? l.labels.map((_, i) => COLORS[i % COLORS.length]) : '#ffd54f';
+      const l = sectorSel ? getPorHilera(humedad, key) : getLinea(humedad, key);
+      const colores = sectorSel ? l.labels.map((_, i) => COLORS[i % COLORS.length]) : '#ffd54f66';
+      const bordes  = sectorSel ? l.labels.map((_, i) => COLORS[i % COLORS.length]) : '#ffd54f';
       mkChart('chartHumedad'+tipo, 'bar', l.labels, [{ label: 'Promedio %', data: l.values, backgroundColor: colores, borderColor: bordes, borderWidth: 1 }]);
       const sub = document.getElementById('subHumedad'+tipo);
       if (sub) sub.textContent = modoTexto;
@@ -1676,25 +1680,29 @@ function renderGraficos() {
     // Gráfico nuevo: comparación de las 3 mediciones en el tiempo, para una Hilera puntual dentro de un Sector
     const mensajeDiv = document.getElementById('humedadHileraMensaje');
     const chartWrap  = document.getElementById('humedadHileraChartWrap');
-    if (currentGrafSector && currentGrafHilera) {
+    if (sectorSel && currentGrafHilera) {
       mensajeDiv.style.display = 'none';
       chartWrap.style.display = 'block';
-      const registrosHilera = humedad.filter(r => r.sector === currentGrafSector && String(r.hilera) === String(currentGrafHilera));
+      const registrosHilera = humedad.filter(r => r.sector === sectorSel && String(r.hilera) === String(currentGrafHilera));
       const fechas = [...new Set(registrosHilera.map(r => r.fecha).filter(Boolean))].sort();
       const serie = (campo) => fechas.map(f => {
         const reg = registrosHilera.filter(r => r.fecha === f);
         const vals = reg.map(r => parseFloat(r[campo])).filter(v => !isNaN(v));
         return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
       });
+      const obsSerie = fechas.map(f => {
+        const obs = registrosHilera.filter(r => r.fecha === f && r.observacion).map(r => r.observacion);
+        return obs.length ? obs.join('; ') : undefined;
+      });
       mkChart('chartHumedadHilera', 'line', fechas, [
-        { label: 'H. Inicial', data: serie('humedad_inicial'), borderColor: '#4caf50', backgroundColor: '#4caf5022', tension: 0.4, pointRadius: 3, fill: false, spanGaps: true },
-        { label: 'H. Media',   data: serie('humedad_media'),   borderColor: '#42a5f5', backgroundColor: '#42a5f522', tension: 0.4, pointRadius: 3, fill: false, spanGaps: true },
-        { label: 'H. Final',   data: serie('humedad_final'),   borderColor: '#ffd54f', backgroundColor: '#ffd54f22', tension: 0.4, pointRadius: 3, fill: false, spanGaps: true },
+        { label: 'H. Inicial', data: serie('humedad_inicial'), observaciones: obsSerie, borderColor: '#4caf50', backgroundColor: '#4caf5022', tension: 0.4, pointRadius: 3, fill: false, spanGaps: true },
+        { label: 'H. Media',   data: serie('humedad_media'),   observaciones: obsSerie, borderColor: '#42a5f5', backgroundColor: '#42a5f522', tension: 0.4, pointRadius: 3, fill: false, spanGaps: true },
+        { label: 'H. Final',   data: serie('humedad_final'),   observaciones: obsSerie, borderColor: '#ffd54f', backgroundColor: '#ffd54f22', tension: 0.4, pointRadius: 3, fill: false, spanGaps: true },
       ]);
     } else {
       chartWrap.style.display = 'none';
       mensajeDiv.style.display = 'block';
-      mensajeDiv.textContent = !currentGrafSector
+      mensajeDiv.textContent = !sectorSel
         ? 'Elegí primero un Sector, y después una Hilera, para comparar su evolución en el tiempo.'
         : 'Ahora elegí una Hilera para ver su evolución en el tiempo.';
     }
@@ -1706,13 +1714,13 @@ function renderGraficos() {
     const s = getSectores(pctDrenaje);
     mkChart('chartPctDrenajeSectores', 'bar', s.labels, [{ label: 'Registros', data: s.values, backgroundColor: '#42a5f566', borderColor: '#42a5f5', borderWidth: 1 }], { indexAxis: 'y' });
     const l = getLinea(pctDrenaje, 'PorcentajeDrenaje');
-    mkChart('chartPctDrenajeValor', 'line', l.labels, [{ label: '% Drenaje promedio', data: l.values, borderColor: '#42a5f5', backgroundColor: '#42a5f522', tension: 0.4, pointRadius: 3, fill: true }]);
+    mkChart('chartPctDrenajeValor', 'line', l.labels, [{ label: '% Drenaje promedio', data: l.values, observaciones: l.observaciones, borderColor: '#42a5f5', backgroundColor: '#42a5f522', tension: 0.4, pointRadius: 3, fill: true }]);
   }
 
   if (currentGrafView === 'comparacion') {
     const mensajeDiv = document.getElementById('comparacionMensaje');
     const chartsWrap = document.getElementById('comparacionChartsWrap');
-    if (!currentGrafSector) {
+    if (!sectorSel) {
       chartsWrap.style.display = 'none';
       mensajeDiv.style.display = 'block';
     } else {
@@ -1723,12 +1731,29 @@ function renderGraficos() {
         const ld = getLinea(drenaje, p);
         const fechas = [...new Set([...lg.labels, ...ld.labels])].sort();
         const serie = (linea) => fechas.map(f => { const i = linea.labels.indexOf(f); return i >= 0 ? linea.values[i] : null; });
+        const serieObs = (linea) => fechas.map(f => { const i = linea.labels.indexOf(f); return i >= 0 ? linea.observaciones[i] : undefined; });
         mkChart('chartComp'+p, 'line', fechas, [
-          { label: 'Goteo',   data: serie(lg), borderColor: '#4caf50', backgroundColor: '#4caf5022', tension: 0.4, pointRadius: 3, fill: false, spanGaps: true },
-          { label: 'Drenaje', data: serie(ld), borderColor: '#ab47bc', backgroundColor: '#ab47bc22', tension: 0.4, pointRadius: 3, fill: false, spanGaps: true },
+          { label: 'Goteo',   data: serie(lg), observaciones: serieObs(lg), borderColor: '#4caf50', backgroundColor: '#4caf5022', tension: 0.4, pointRadius: 3, fill: false, spanGaps: true },
+          { label: 'Drenaje', data: serie(ld), observaciones: serieObs(ld), borderColor: '#ab47bc', backgroundColor: '#ab47bc22', tension: 0.4, pointRadius: 3, fill: false, spanGaps: true },
         ]);
       });
     }
+  }
+
+  if (currentGrafView === 'lisimetro') {
+    const d = getDias(lisimetro);
+    mkChart('chartLisimetroDias', 'bar', d.labels, [{ label: 'Registros', data: d.values, backgroundColor: '#2e6e8e66', borderColor: '#2e6e8e', borderWidth: 1 }]);
+    const s = getSectores(lisimetro);
+    mkChart('chartLisimetroSectores', 'bar', s.labels, [{ label: 'Registros', data: s.values, backgroundColor: '#42a5f566', borderColor: '#42a5f5', borderWidth: 1 }], { indexAxis: 'y' });
+    params.forEach(p => {
+      if (sectorSel) {
+        const l = getLinea(lisimetro, p);
+        mkChart('chartLisimetro'+p, 'line', l.labels, [{ label: p, data: l.values, observaciones: l.observaciones, borderColor: '#2e6e8e', backgroundColor: '#2e6e8e22', tension: 0.4, pointRadius: 3, fill: true }]);
+      } else {
+        const lp = getLineaPorSector(lisimetro, p);
+        mkChart('chartLisimetro'+p, 'line', lp.labels, lp.datasets);
+      }
+    });
   }
 
   if (currentGrafView === 'general') {
@@ -1739,6 +1764,7 @@ function renderGraficos() {
       { label: 'Drenaje', data: d.labels.map(l => drenaje.filter(r=>r.fecha===l).length), backgroundColor: '#ce93d866', borderColor: '#ce93d8', borderWidth:1 },
       { label: 'Humedad', data: d.labels.map(l => humedad.filter(r=>r.fecha===l).length), backgroundColor: '#ffd54f66', borderColor: '#ffd54f', borderWidth:1 },
       { label: '% Drenaje', data: d.labels.map(l => pctDrenaje.filter(r=>r.fecha===l).length), backgroundColor: '#42a5f566', borderColor: '#42a5f5', borderWidth:1 },
+      { label: 'Lisímetro', data: d.labels.map(l => lisimetro.filter(r=>r.fecha===l).length), backgroundColor: '#2e6e8e66', borderColor: '#2e6e8e', borderWidth:1 },
     ]);
     // Por trabajador
     const trab = {};
@@ -1753,8 +1779,8 @@ function renderGraficos() {
     ]);
     // Distribución por tipo
     mkChart('chartGeneralTipos', 'doughnut',
-      ['Goteo','Drenaje','Humedad','% Drenaje'],
-      [{ data: [goteo.length, drenaje.length, humedad.length, pctDrenaje.length], backgroundColor: ['#4caf50','#ce93d8','#ffd54f','#42a5f5'], borderWidth: 0 }]
+      ['Goteo','Drenaje','Humedad','% Drenaje','Lisímetro'],
+      [{ data: [goteo.length, drenaje.length, humedad.length, pctDrenaje.length, lisimetro.length], backgroundColor: ['#4caf50','#ce93d8','#ffd54f','#42a5f5','#2e6e8e'], borderWidth: 0 }]
     );
   }
 }
@@ -1860,15 +1886,15 @@ async function descargarExcel() {
   wb.created = new Date();
 
   // Mismo orden que la tabla de Registros: Tipo (si corresponde) → Fecha ascendente → Sector → Hilera/Hora
-  const TIPO_ORDEN_XLS = { Goteo: 0, Drenaje: 1, Humedad: 2, PorcentajeDrenaje: 3 };
+  const TIPO_ORDEN_XLS = { Goteo: 0, Drenaje: 1, Humedad: 2, PorcentajeDrenaje: 3, Lisimetro: 4 };
   function ordenarParaExcel(lista, agruparPorTipo) {
     return [...lista].sort((a, b) => {
+      const fa = (a.fecha || '').localeCompare(b.fecha || '');
+      if (fa !== 0) return fa;
       if (agruparPorTipo) {
         const ta = TIPO_ORDEN_XLS[a.tipo] ?? 99, tb = TIPO_ORDEN_XLS[b.tipo] ?? 99;
         if (ta !== tb) return ta - tb;
       }
-      const fa = (a.fecha || '').localeCompare(b.fecha || '');
-      if (fa !== 0) return fa;
       const sa = (a.sector || '').localeCompare(b.sector || '', 'es', { numeric: true });
       if (sa !== 0) return sa;
       if (a.tipo === 'Humedad') return (a.hilera || 0) - (b.hilera || 0);
@@ -1889,6 +1915,7 @@ async function descargarExcel() {
     drenaje: { header: 'FF6A4C93', text: 'FFFFFFFF', fila: 'FFF1E6FA' }, // violeta
     humedad: { header: 'FFB08900', text: 'FFFFFFFF', fila: 'FFFFF6DC' }, // amarillo mostaza
     pctdrenaje: { header: 'FF1565C0', text: 'FFFFFFFF', fila: 'FFDCEEFB' }, // azul
+    lisimetro: { header: 'FF2E6E8E', text: 'FFFFFFFF', fila: 'FFD6E4F0' }, // celeste petróleo
   };
 
   function headerRow(ws, headers, colores) {
@@ -1904,24 +1931,26 @@ async function descargarExcel() {
 
   // ── Hoja 1 — Todos los registros (columnas separadas para Humedad y % Drenaje, sin mezclar) ──
   const wsTodos = wb.addWorksheet('Todos los registros');
-  const headersTodos = ['Tipo','Fecha','Hora','Trabajador','Equipo','Sector','pH','CE','Nitratos','Potasio','Calcio','Sodio','Hilera','H. Inicial','H. Media','H. Final','% Drenaje'];
+  const headersTodos = ['Tipo','Fecha','Hora','Trabajador','Equipo','Sector','pH','CE','Nitratos','Potasio','Calcio','Sodio','Hilera','H. Inicial','H. Media','H. Final','% Drenaje','Observación'];
   headerRow(wsTodos, headersTodos, PALETA.todos);
   wsTodos.columns = [
     {width:12},{width:12},{width:9},{width:22},{width:18},{width:16},{width:8},{width:8},
-    {width:10},{width:10},{width:10},{width:10},{width:8},{width:11},{width:11},{width:11},{width:11}
+    {width:10},{width:10},{width:10},{width:10},{width:8},{width:11},{width:11},{width:11},{width:11},{width:26}
   ];
-  const coloresPorTipo = { Goteo: 'FFDCEDC8', Drenaje: 'FFE6D6F5', Humedad: 'FFFFF0BF', PorcentajeDrenaje: 'FFDCEEFB' };
-  const etiquetaTipo = { PorcentajeDrenaje: '% Drenaje' };
+  const coloresPorTipo = { Goteo: 'FFDCEDC8', Drenaje: 'FFE6D6F5', Humedad: 'FFFFF0BF', PorcentajeDrenaje: 'FFDCEEFB', Lisimetro: 'FFD6E4F0' };
+  const etiquetaTipo = { PorcentajeDrenaje: '% Drenaje', Lisimetro: 'Lisímetro' };
   ordenarParaExcel(FILTRADOS, true).forEach(r => {
     const isHum = r.tipo === 'Humedad';
     const isPct = r.tipo === 'PorcentajeDrenaje';
+    const isMed = r.tipo === 'Goteo' || r.tipo === 'Drenaje' || r.tipo === 'Lisimetro';
     const row = wsTodos.addRow([
       etiquetaTipo[r.tipo] || r.tipo || '', formatFecha(r.fecha) || '', r.hora || '', r.trabajador || '', r.equipo || '', r.sector || '',
-      (isHum||isPct) ? '' : numXls(r.pH), (isHum||isPct) ? '' : numXls(r.CE), (isHum||isPct) ? '' : numXls(r.Nitratos),
-      (isHum||isPct) ? '' : numXls(r.Potasio), (isHum||isPct) ? '' : numXls(r.Calcio), (isHum||isPct) ? '' : numXls(r.Sodio),
+      isMed ? numXls(r.pH) : '', isMed ? numXls(r.CE) : '', isMed ? numXls(r.Nitratos) : '',
+      isMed ? numXls(r.Potasio) : '', isMed ? numXls(r.Calcio) : '', isMed ? numXls(r.Sodio) : '',
       isHum ? (r.hilera || '') : '', isHum ? numXls(r.humedad_inicial) : '',
       isHum ? numXls(r.humedad_media) : '', isHum ? numXls(r.humedad_final) : '',
-      isPct ? numXls(r.PorcentajeDrenaje) : ''
+      isPct ? numXls(r.PorcentajeDrenaje) : '',
+      r.observacion || ''
     ]);
     const colorFila = coloresPorTipo[r.tipo];
     if (colorFila) {
@@ -1932,37 +1961,45 @@ async function descargarExcel() {
 
   // ── Hoja 2 — Goteo ──
   const wsGoteo = wb.addWorksheet('Goteo');
-  const headersMedicion = ['Fecha','Hora','Trabajador','Equipo','Sector','pH','CE','Nitratos','Potasio','Calcio','Sodio'];
+  const headersMedicion = ['Fecha','Hora','Trabajador','Equipo','Sector','pH','CE','Nitratos','Potasio','Calcio','Sodio','Observación'];
   headerRow(wsGoteo, headersMedicion, PALETA.goteo);
-  wsGoteo.columns = [{width:12},{width:9},{width:22},{width:18},{width:16},{width:8},{width:8},{width:10},{width:10},{width:10},{width:10}];
+  wsGoteo.columns = [{width:12},{width:9},{width:22},{width:18},{width:16},{width:8},{width:8},{width:10},{width:10},{width:10},{width:10},{width:26}];
   ordenarParaExcel(FILTRADOS.filter(r => r.tipo === 'Goteo'), false).forEach(r => {
-    wsGoteo.addRow([formatFecha(r.fecha) || '', r.hora || '', r.trabajador || '', r.equipo || '', r.sector || '', numXls(r.pH), numXls(r.CE), numXls(r.Nitratos), numXls(r.Potasio), numXls(r.Calcio), numXls(r.Sodio)]);
+    wsGoteo.addRow([formatFecha(r.fecha) || '', r.hora || '', r.trabajador || '', r.equipo || '', r.sector || '', numXls(r.pH), numXls(r.CE), numXls(r.Nitratos), numXls(r.Potasio), numXls(r.Calcio), numXls(r.Sodio), r.observacion || '']);
   });
 
   // ── Hoja 3 — Drenaje ──
   const wsDrenaje = wb.addWorksheet('Drenaje');
   headerRow(wsDrenaje, headersMedicion, PALETA.drenaje);
-  wsDrenaje.columns = [{width:12},{width:9},{width:22},{width:18},{width:16},{width:8},{width:8},{width:10},{width:10},{width:10},{width:10}];
+  wsDrenaje.columns = [{width:12},{width:9},{width:22},{width:18},{width:16},{width:8},{width:8},{width:10},{width:10},{width:10},{width:10},{width:26}];
   ordenarParaExcel(FILTRADOS.filter(r => r.tipo === 'Drenaje'), false).forEach(r => {
-    wsDrenaje.addRow([formatFecha(r.fecha) || '', r.hora || '', r.trabajador || '', r.equipo || '', r.sector || '', numXls(r.pH), numXls(r.CE), numXls(r.Nitratos), numXls(r.Potasio), numXls(r.Calcio), numXls(r.Sodio)]);
+    wsDrenaje.addRow([formatFecha(r.fecha) || '', r.hora || '', r.trabajador || '', r.equipo || '', r.sector || '', numXls(r.pH), numXls(r.CE), numXls(r.Nitratos), numXls(r.Potasio), numXls(r.Calcio), numXls(r.Sodio), r.observacion || '']);
   });
 
   // ── Hoja 4 — Humedad ──
   const wsHumedad = wb.addWorksheet('Humedad');
-  const headersHumedad = ['Fecha','Hora','Trabajador','Equipo','Sector','Hilera','H. Inicial','H. Media','H. Final'];
+  const headersHumedad = ['Fecha','Hora','Trabajador','Equipo','Sector','Hilera','H. Inicial','H. Media','H. Final','Observación'];
   headerRow(wsHumedad, headersHumedad, PALETA.humedad);
-  wsHumedad.columns = [{width:12},{width:9},{width:22},{width:18},{width:16},{width:8},{width:12},{width:12},{width:12}];
+  wsHumedad.columns = [{width:12},{width:9},{width:22},{width:18},{width:16},{width:8},{width:12},{width:12},{width:12},{width:26}];
   ordenarParaExcel(FILTRADOS.filter(r => r.tipo === 'Humedad'), false).forEach(r => {
-    wsHumedad.addRow([formatFecha(r.fecha) || '', r.hora || '', r.trabajador || '', r.equipo || '', r.sector || '', r.hilera || '', numXls(r.humedad_inicial), numXls(r.humedad_media), numXls(r.humedad_final)]);
+    wsHumedad.addRow([formatFecha(r.fecha) || '', r.hora || '', r.trabajador || '', r.equipo || '', r.sector || '', r.hilera || '', numXls(r.humedad_inicial), numXls(r.humedad_media), numXls(r.humedad_final), r.observacion || '']);
   });
 
   // ── Hoja 5 — % Drenaje ──
   const wsPct = wb.addWorksheet('% Drenaje');
-  const headersPct = ['Fecha','Hora','Trabajador','Equipo','Sector','% Drenaje'];
+  const headersPct = ['Fecha','Hora','Trabajador','Equipo','Sector','% Drenaje','Observación'];
   headerRow(wsPct, headersPct, PALETA.pctdrenaje);
-  wsPct.columns = [{width:12},{width:9},{width:22},{width:18},{width:16},{width:12}];
+  wsPct.columns = [{width:12},{width:9},{width:22},{width:18},{width:16},{width:12},{width:26}];
   ordenarParaExcel(FILTRADOS.filter(r => r.tipo === 'PorcentajeDrenaje'), false).forEach(r => {
-    wsPct.addRow([formatFecha(r.fecha) || '', r.hora || '', r.trabajador || '', r.equipo || '', r.sector || '', numXls(r.PorcentajeDrenaje)]);
+    wsPct.addRow([formatFecha(r.fecha) || '', r.hora || '', r.trabajador || '', r.equipo || '', r.sector || '', numXls(r.PorcentajeDrenaje), r.observacion || '']);
+  });
+
+  // ── Hoja 6 — Lisímetro ──
+  const wsLisimetro = wb.addWorksheet('Lisímetro');
+  headerRow(wsLisimetro, headersMedicion, PALETA.lisimetro);
+  wsLisimetro.columns = [{width:12},{width:9},{width:22},{width:18},{width:16},{width:8},{width:8},{width:10},{width:10},{width:10},{width:10},{width:26}];
+  ordenarParaExcel(FILTRADOS.filter(r => r.tipo === 'Lisimetro'), false).forEach(r => {
+    wsLisimetro.addRow([formatFecha(r.fecha) || '', r.hora || '', r.trabajador || '', r.equipo || '', r.sector || '', numXls(r.pH), numXls(r.CE), numXls(r.Nitratos), numXls(r.Potasio), numXls(r.Calcio), numXls(r.Sodio), r.observacion || '']);
   });
 
   // Descargar
