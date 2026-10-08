@@ -335,6 +335,11 @@
       padding: 4px 10px; color: var(--muted); font-size: 11px; font-weight: 700; cursor: pointer;
     }
     .mini-btn.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+    .res-eq-btn {
+      background: var(--card); border: 1.5px solid var(--border); border-radius: 10px;
+      padding: 8px 14px; color: var(--muted); font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .res-eq-btn.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
     .gen-nota { color: var(--muted); font-size: 11px; margin-top: 8px; }
     .matriz td, .matriz th { text-align: center; }
     .matriz td:first-child, .matriz th:first-child { text-align: left; white-space: nowrap; }
@@ -420,6 +425,10 @@
 
   <!-- TAB: RESUMEN -->
   <div id="tab-resumen" class="tab-content active">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+      <span style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;">Ver equipo</span>
+      <div id="resumenEquipoBtns" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+    </div>
     <div class="card" style="margin-bottom:18px;">
       <div id="bienvenidaSaludo" style="color:var(--text);font-size:18px;font-weight:800;">Hola 👋</div>
       <div id="bienvenidaFecha" style="color:var(--muted);font-size:12px;margin-top:2px;"></div>
@@ -616,6 +625,13 @@
 
     <!-- Vista Resumen general (va al final de los botones) -->
     <div id="grafView-general" class="graf-view" style="display:none">
+
+      <!-- Selector propio del Resumen general (no afecta a las otras vistas) -->
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px;">
+        <span style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;">Ver equipo</span>
+        <div id="genEquipoBtns" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+      </div>
+      <div id="genEquipoSubtitulo" style="color:var(--muted);font-size:12px;margin-bottom:16px;font-weight:600;"></div>
 
       <!-- Fila 1: KPIs -->
       <div class="kpi-grid" id="genKpis"></div>
@@ -857,6 +873,52 @@ function nombreParam(p) { return NOMBRE_PARAM[p] || p; }
 // Ahora son POR EQUIPO: cada equipo tiene sus propios objetivos
 const EQUIPOS = ['Equipo 3 FRU','Equipo HID 3 FRU','Equipo 1 FRA','Equipo 1 MO','Equipo 1 ARA'];
 const PARAMS_OBJ = ['pH','CE','Nitratos','Potasio','Calcio','Sodio'];
+
+// Cada equipo pertenece a un cultivo (Frutilla tiene dos equipos)
+const CULTIVO_POR_EQUIPO = {
+  'Equipo 3 FRU':     'Frutilla',
+  'Equipo HID 3 FRU': 'Frutilla',
+  'Equipo 1 FRA':     'Frambuesa',
+  'Equipo 1 MO':      'Mora',
+  'Equipo 1 ARA':     'Arándano',
+};
+function cultivoDe(equipo) { return CULTIVO_POR_EQUIPO[equipo] || ''; }
+
+// ── SELECTOR DE EQUIPO DE LA PESTAÑA RESUMEN (independiente del filtro de arriba y de Gráficos) ──
+let currentResumenEquipo = '';
+function filtrarResumen(lista) {
+  return currentResumenEquipo ? lista.filter(r => r.equipo === currentResumenEquipo) : lista;
+}
+function htmlBotonesEquipo(actual, fn) {
+  const opciones = [{ v: '', t: 'Todos' }, ...EQUIPOS.map(e => ({ v: e, t: `${e.replace('Equipo ', '')} · ${cultivoDe(e)}` }))];
+  return opciones.map(o =>
+    `<button class="res-eq-btn${o.v === actual ? ' active' : ''}" onclick="${fn}('${o.v}')">${o.t}</button>`
+  ).join('');
+}
+function renderSelectorResumen() {
+  const cont = document.getElementById('resumenEquipoBtns');
+  if (cont) cont.innerHTML = htmlBotonesEquipo(currentResumenEquipo, 'setResumenEquipo');
+}
+
+// ── SELECTOR DE EQUIPO DEL RESUMEN GENERAL (solo afecta a esa vista; Goteo, Drenaje, etc. quedan igual) ──
+let currentGenEquipo = '';
+function renderSelectorGeneral() {
+  const cont = document.getElementById('genEquipoBtns');
+  if (cont) cont.innerHTML = htmlBotonesEquipo(currentGenEquipo, 'setGenEquipo');
+}
+function setGenEquipo(eq) {
+  currentGenEquipo = eq;
+  renderSelectorGeneral();
+  renderGraficos();
+}
+
+function setResumenEquipo(eq) {
+  currentResumenEquipo = eq;
+  renderSelectorResumen();
+  renderBienvenida();
+  renderKPIs();
+  renderSemaforos();
+}
 const OBJETIVOS_GOTEO_DEFAULT = { pH: 6.0, CE: 1.6, Nitratos: 665, Potasio: 209, Calcio: 89, Sodio: null };
 let OBJETIVOS_POR_EQUIPO = {};      // { 'Equipo 3 FRU': { pH, CE, ... }, ... }
 let OBJETIVOS_YA_POR_EQUIPO = false; // true si Firestore ya tiene la estructura nueva
@@ -940,25 +1002,26 @@ function limpiarFiltros() {
 }
 
 function actualizarSectores() {
-  const equipo = document.getElementById('filtroEquipo').value;
   const sel = document.getElementById('filtroSector');
   const actual = sel.value;
+  const equipo = document.getElementById('filtroEquipo').value;
   const sectores = [...new Set(DATOS.filter(r => !equipo || r.equipo === equipo).map(r => r.sector).filter(Boolean))].sort();
   sel.innerHTML = '<option value="">Todos</option>' + sectores.map(s => `<option${s===actual?' selected':''}>${s}</option>`).join('');
 }
 
 // ── KPIs ──────────────────────────────────────────────────────────────────────
 function renderKPIs() {
-  const goteo   = FILTRADOS.filter(r => r.tipo === 'Goteo');
-  const drenaje = FILTRADOS.filter(r => r.tipo === 'Drenaje');
-  const humedad = FILTRADOS.filter(r => r.tipo === 'Humedad');
-  const alertas = contarAlertas(FILTRADOS);
+  const datosRes = filtrarResumen(FILTRADOS);
+  const goteo   = datosRes.filter(r => r.tipo === 'Goteo');
+  const drenaje = datosRes.filter(r => r.tipo === 'Drenaje');
+  const humedad = datosRes.filter(r => r.tipo === 'Humedad');
+  const alertas = contarAlertas(datosRes);
 
   document.getElementById('kpiGrid').innerHTML = `
     <div class="kpi"><div class="kpi-icon">💧</div><div class="kpi-value">${goteo.length}</div><div class="kpi-label">Registros Goteo</div></div>
     <div class="kpi"><div class="kpi-icon">🚿</div><div class="kpi-value">${drenaje.length}</div><div class="kpi-label">Registros Drenaje</div></div>
     <div class="kpi"><div class="kpi-icon">🌱</div><div class="kpi-value">${humedad.length}</div><div class="kpi-label">Registros Humedad</div></div>
-    <div class="kpi"><div class="kpi-icon">📊</div><div class="kpi-value">${FILTRADOS.length}</div><div class="kpi-label">Total Registros</div></div>
+    <div class="kpi"><div class="kpi-icon">📊</div><div class="kpi-value">${datosRes.length}</div><div class="kpi-label">Total Registros</div></div>
     <div class="kpi"><div class="kpi-icon">🚨</div><div class="kpi-value" style="color:${alertas > 0 ? 'var(--danger)' : 'var(--ok)'}">${alertas}</div><div class="kpi-label">Alertas Z-Score</div></div>
   `;
 }
@@ -1213,7 +1276,7 @@ function contarAlertasHoy() {
   const hoy = new Date().toISOString().split('T')[0];
   const params = ['pH','CE','Nitratos','Potasio','Calcio','Sodio','PorcentajeDrenaje'];
   const conteo = { Goteo: 0, Drenaje: 0, PorcentajeDrenaje: 0, Lisimetro: 0 };
-  DATOS.filter(r => r.fecha === hoy && r.tipo !== 'Humedad').forEach(r => {
+  filtrarResumen(DATOS).filter(r => r.fecha === hoy && r.tipo !== 'Humedad').forEach(r => {
     params.forEach(p => {
       if (r[p] === undefined || r[p] === '' || r[p] === null) return;
       const estado = getEstado(p, r[p]);
@@ -1230,7 +1293,8 @@ function renderBienvenida() {
   const hoyStr = formatFecha(new Date().toISOString().split('T')[0]);
 
   document.getElementById('bienvenidaSaludo').textContent = `${saludo}${nombre ? ', ' + nombre : ''} 👋`;
-  document.getElementById('bienvenidaFecha').textContent = `Hoy es ${hoyStr}`;
+  document.getElementById('bienvenidaFecha').textContent = `Hoy es ${hoyStr}` +
+    (currentResumenEquipo ? ` · Viendo: ${currentResumenEquipo} (${cultivoDe(currentResumenEquipo)})` : '');
 
   const conteo = contarAlertasHoy();
   const partes = [];
@@ -1257,11 +1321,11 @@ function renderBienvenida() {
 
 function renderSemaforos() {
   const params = ['pH','CE','Nitratos','Potasio','Calcio','Sodio'];
-  const ultGoteo   = FILTRADOS.filter(r => r.tipo === 'Goteo').slice(-1)[0];
-  const ultDrenaje = FILTRADOS.filter(r => r.tipo === 'Drenaje').slice(-1)[0];
-  const ultHumedad = FILTRADOS.filter(r => r.tipo === 'Humedad').slice(-1)[0];
-  const ultPctDrenaje = FILTRADOS.filter(r => r.tipo === 'PorcentajeDrenaje').slice(-1)[0];
-  const ultLisimetro = FILTRADOS.filter(r => r.tipo === 'Lisimetro').slice(-1)[0];
+  const ultGoteo   = filtrarResumen(FILTRADOS).filter(r => r.tipo === 'Goteo').slice(-1)[0];
+  const ultDrenaje = filtrarResumen(FILTRADOS).filter(r => r.tipo === 'Drenaje').slice(-1)[0];
+  const ultHumedad = filtrarResumen(FILTRADOS).filter(r => r.tipo === 'Humedad').slice(-1)[0];
+  const ultPctDrenaje = filtrarResumen(FILTRADOS).filter(r => r.tipo === 'PorcentajeDrenaje').slice(-1)[0];
+  const ultLisimetro = filtrarResumen(FILTRADOS).filter(r => r.tipo === 'Lisimetro').slice(-1)[0];
 
   const fmtFechaHora = r => r.hora ? `Último registro: ${formatFecha(r.fecha)} · ${r.hora}` : `Último registro: ${formatFecha(r.fecha)}`;
   document.getElementById('fechaGoteo').textContent = ultGoteo ? fmtFechaHora(ultGoteo) : '';
@@ -1713,6 +1777,7 @@ function renderGraficos() {
   const subEquipo = document.getElementById('grafEquipoSubtitulo');
   if (subEquipo) {
     subEquipo.textContent = (equipoSel && equipoSel.value) ? `Equipo: ${equipoSel.value}` : 'Todos los equipos';
+    subEquipo.style.display = currentGrafView === 'general' ? 'none' : ''; // Resumen general tiene su propio "Mostrando"
   }
 
   actualizarNotaObjetivos();
@@ -1866,7 +1931,9 @@ function renderGraficos() {
   }
 
   if (currentGrafView === 'general') {
-    renderResumenGeneral(base, goteo, drenaje, humedad, pctDrenaje, lisimetro);
+    const baseGen = currentGenEquipo ? base.filter(r => r.equipo === currentGenEquipo) : base;
+    const porTipo = t => baseGen.filter(r => r.tipo === t);
+    renderResumenGeneral(baseGen, porTipo('Goteo'), porTipo('Drenaje'), porTipo('Humedad'), porTipo('PorcentajeDrenaje'), porTipo('Lisimetro'));
   }
 }
 
@@ -1896,6 +1963,10 @@ const ESCALA = { ticks: { color: '#6b9470', font: { size: 9 } }, grid: { color: 
 function renderResumenGeneral(base, goteo, drenaje, humedad, pctDrenaje, lisimetro) {
   const paramsQuim = ['pH','CE','Nitratos','Potasio','Calcio','Sodio'];
   const paramsTodos = [...paramsQuim, 'PorcentajeDrenaje'];
+  const subGen = document.getElementById('genEquipoSubtitulo');
+  if (subGen) subGen.textContent = currentGenEquipo
+    ? `Mostrando el resumen de: ${currentGenEquipo} (${cultivoDe(currentGenEquipo) || '—'})`
+    : 'Mostrando el resumen de: todos los equipos';
 
   // ── Fila 1: KPIs ──
   let totalVals = 0, fuera = 0, alertasN = 0;
@@ -1924,7 +1995,7 @@ function renderResumenGeneral(base, goteo, drenaje, humedad, pctDrenaje, lisimet
   `;
 
   // ── Fila 2: matriz de estado por equipo (Goteo vs objetivo del equipo) ──
-  const equiposMatriz = [...EQUIPOS, ...new Set(goteo.map(r => r.equipo).filter(e => e && !EQUIPOS.includes(e)))];
+  const equiposMatriz = currentGenEquipo ? [currentGenEquipo] : [...EQUIPOS, ...new Set(goteo.map(r => r.equipo).filter(e => e && !EQUIPOS.includes(e)))];
   const filas = equiposMatriz.map(eq => {
     const regs = goteo.filter(r => r.equipo === eq);
     if (!regs.length) {
@@ -2264,6 +2335,8 @@ hace30.setDate(hace30.getDate() - 30);
 const hace30str = hace30.toISOString().split('T')[0];
 document.getElementById('filtroHasta').value = hoy;
 document.getElementById('filtroDesde').value = hace30str;
+renderSelectorResumen();
+renderSelectorGeneral();
 </script>
 
 <script type="module">
