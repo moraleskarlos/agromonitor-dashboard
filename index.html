@@ -493,7 +493,11 @@
   <!-- MODAL: EDITAR OBJETIVOS DE GOTEO -->
   <div class="modal-overlay" id="objetivosModal">
     <div class="modal-box">
-      <h3>Editar objetivos de Goteo</h3>
+      <h3>Editar objetivos de Goteo por equipo</h3>
+      <div class="filter-group" style="margin-bottom:12px;">
+        <label>Equipo</label>
+        <select id="objetivosEquipo" onchange="renderFormObjetivos()"></select>
+      </div>
       <div style="color:var(--muted);font-size:12px;margin-bottom:14px;">
         Valor de referencia definido por el asesor. Se dibuja como línea de objetivo en cada gráfico — no afecta el color de alerta.
       </div>
@@ -537,6 +541,7 @@
     <div id="grafView-goteo" class="graf-view">
       <div style="margin-bottom:14px;">
         <button class="graf-btn" onclick="abrirModalObjetivos()">✏️ Editar objetivos de Goteo</button>
+        <div class="objetivo-nota" style="color:var(--muted);font-size:12px;margin-top:8px;"></div>
       </div>
       <div class="grid2">
         <div class="card"><div class="card-title">📅 Registros por día</div><div class="chart-container"><canvas id="chartGoteoDias"></canvas></div></div>
@@ -618,6 +623,10 @@
 
     <!-- Vista Goteo vs Drenaje (mezclado, por sector y parámetro) -->
     <div id="grafView-comparacion" class="graf-view" style="display:none">
+      <div style="margin-bottom:14px;">
+        <button class="graf-btn" onclick="abrirModalObjetivos()">✏️ Editar objetivos de Goteo</button>
+        <div class="objetivo-nota" style="color:var(--muted);font-size:12px;margin-top:8px;"></div>
+      </div>
       <div id="comparacionMensaje" class="empty">Elegí un Sector arriba para comparar Goteo vs Drenaje en ese mismo lugar.</div>
       <div id="comparacionChartsWrap" style="display:none;grid-template-columns:repeat(2,1fr);gap:14px;">
         <div class="card"><div class="card-title">📈 pH — Goteo vs Drenaje</div><div class="chart-container" style="height:220px"><canvas id="chartComppH"></canvas></div></div>
@@ -797,8 +806,12 @@ const NOMBRE_PARAM = { PorcentajeDrenaje: '% Drenaje' };
 function nombreParam(p) { return NOMBRE_PARAM[p] || p; }
 
 // Objetivos de Goteo (líneas de referencia en los gráficos, no afectan el color de alerta)
+// Ahora son POR EQUIPO: cada equipo tiene sus propios objetivos
+const EQUIPOS = ['Equipo 3 FRU','Equipo HID 3 FRU','Equipo 1 FRA','Equipo 1 MO','Equipo 1 ARA'];
+const PARAMS_OBJ = ['pH','CE','Nitratos','Potasio','Calcio','Sodio'];
 const OBJETIVOS_GOTEO_DEFAULT = { pH: 6.0, CE: 1.6, Nitratos: 665, Potasio: 209, Calcio: 89, Sodio: null };
-let OBJETIVOS_GOTEO = JSON.parse(JSON.stringify(OBJETIVOS_GOTEO_DEFAULT));
+let OBJETIVOS_POR_EQUIPO = {};      // { 'Equipo 3 FRU': { pH, CE, ... }, ... }
+let OBJETIVOS_YA_POR_EQUIPO = false; // true si Firestore ya tiene la estructura nueva
 
 let DATOS = [];
 let FILTRADOS = [];
@@ -919,31 +932,67 @@ async function cargarRangos() {
   }
 }
 
-// ── OBJETIVOS DE GOTEO (líneas de referencia en gráficos, editables sin historial) ──
+// ── OBJETIVOS DE GOTEO POR EQUIPO (líneas de referencia en gráficos, no afectan el color de alerta) ──
+// Firestore: configuracion/objetivos_goteo → { por_equipo: { 'Equipo 3 FRU': {pH,CE,...}, ... } }
+// Si el documento todavía tiene el formato viejo ({ valores: {...} } global), esos valores
+// se copian a cada equipo como punto de partida, y se guarda la estructura nueva al primer cambio.
 async function cargarObjetivosGoteo() {
   try {
     const ref = FB.doc(FB.db, 'configuracion', 'objetivos_goteo');
     const snap = await FB.getDoc(ref);
-    if (snap.exists()) {
-      OBJETIVOS_GOTEO = snap.data().valores || OBJETIVOS_GOTEO;
+    const data = snap.exists() ? snap.data() : {};
+    if (data.por_equipo) {
+      OBJETIVOS_YA_POR_EQUIPO = true;
+      OBJETIVOS_POR_EQUIPO = data.por_equipo;
+      // Equipo nuevo sin objetivos todavía → queda "sin definir"
+      EQUIPOS.forEach(e => {
+        if (!OBJETIVOS_POR_EQUIPO[e]) OBJETIVOS_POR_EQUIPO[e] = Object.fromEntries(PARAMS_OBJ.map(p => [p, null]));
+      });
     } else {
-      await FB.setDoc(ref, { valores: OBJETIVOS_GOTEO_DEFAULT });
-      OBJETIVOS_GOTEO = JSON.parse(JSON.stringify(OBJETIVOS_GOTEO_DEFAULT));
+      OBJETIVOS_YA_POR_EQUIPO = false;
+      const base = data.valores || OBJETIVOS_GOTEO_DEFAULT;
+      OBJETIVOS_POR_EQUIPO = Object.fromEntries(EQUIPOS.map(e => [e, { ...base }]));
     }
   } catch (e) {
     console.error('Error cargando objetivos de Goteo, se usan los valores por defecto:', e);
+    OBJETIVOS_POR_EQUIPO = Object.fromEntries(EQUIPOS.map(e => [e, { ...OBJETIVOS_GOTEO_DEFAULT }]));
   }
 }
 
+// Devuelve el dataset de línea "Objetivo" para un parámetro, según el Equipo elegido en el filtro de arriba.
+// Sin equipo elegido no se dibuja nada (cada equipo tiene un objetivo distinto).
+function datasetObjetivo(param, labels, etiqueta = 'Objetivo') {
+  const eq = document.getElementById('filtroEquipo').value;
+  if (!eq || !labels.length) return null;
+  const obj = (OBJETIVOS_POR_EQUIPO[eq] || {})[param];
+  if (obj === null || obj === undefined || obj === '' || isNaN(obj)) return null;
+  return { label: etiqueta, data: labels.map(() => obj), borderColor: '#ff7043', backgroundColor: 'transparent', borderDash: [6,4], borderWidth: 2, pointRadius: 0, fill: false };
+}
+
+function actualizarNotaObjetivos() {
+  const eq = document.getElementById('filtroEquipo').value;
+  const txt = eq
+    ? `🎯 Línea de objetivo: ${eq}`
+    : '🎯 Elegí un Equipo en el filtro de arriba para ver su línea de objetivo (cada equipo tiene la suya).';
+  document.querySelectorAll('.objetivo-nota').forEach(el => el.textContent = txt);
+}
+
 function abrirModalObjetivos() {
-  const cont = document.getElementById('objetivosForm');
-  const params = ['pH','CE','Nitratos','Potasio','Calcio','Sodio'];
-  cont.innerHTML = params.map(p => `
+  const sel = document.getElementById('objetivosEquipo');
+  const eqFiltro = document.getElementById('filtroEquipo').value;
+  sel.innerHTML = EQUIPOS.map(e => `<option value="${e}"${e === eqFiltro ? ' selected' : ''}>${e}</option>`).join('');
+  renderFormObjetivos();
+  document.getElementById('objetivosModal').style.display = 'flex';
+}
+
+function renderFormObjetivos() {
+  const eq = document.getElementById('objetivosEquipo').value;
+  const obj = OBJETIVOS_POR_EQUIPO[eq] || {};
+  document.getElementById('objetivosForm').innerHTML = PARAMS_OBJ.map(p => `
     <div class="rangos-row" style="grid-template-columns:90px 1fr;">
       <div class="rangos-param">${p}</div>
-      <label>Valor objetivo <input type="number" step="any" id="obj_${p}" value="${OBJETIVOS_GOTEO[p] ?? ''}" placeholder="Sin definir"></label>
+      <label>Valor objetivo <input type="number" step="any" id="obj_${p}" value="${obj[p] ?? ''}" placeholder="Sin definir"></label>
     </div>`).join('');
-  document.getElementById('objetivosModal').style.display = 'flex';
 }
 
 function cerrarModalObjetivos() {
@@ -951,15 +1000,24 @@ function cerrarModalObjetivos() {
 }
 
 async function guardarObjetivos() {
-  const params = ['pH','CE','Nitratos','Potasio','Calcio','Sodio'];
+  const eq = document.getElementById('objetivosEquipo').value;
   const nuevos = {};
-  params.forEach(p => {
+  PARAMS_OBJ.forEach(p => {
     const v = document.getElementById(`obj_${p}`).value;
     nuevos[p] = v === '' ? null : parseFloat(v);
   });
   try {
-    await FB.setDoc(FB.doc(FB.db, 'configuracion', 'objetivos_goteo'), { valores: nuevos });
-    OBJETIVOS_GOTEO = nuevos;
+    const ref = FB.doc(FB.db, 'configuracion', 'objetivos_goteo');
+    if (OBJETIVOS_YA_POR_EQUIPO) {
+      // Solo se toca el equipo editado (merge), así dos personas editando equipos distintos no se pisan
+      await FB.setDoc(ref, { por_equipo: { [eq]: nuevos } }, { merge: true });
+    } else {
+      // Primera vez con la estructura nueva: se guardan todos los equipos (reemplaza el formato viejo global)
+      const todo = { ...OBJETIVOS_POR_EQUIPO, [eq]: nuevos };
+      await FB.setDoc(ref, { por_equipo: todo });
+      OBJETIVOS_YA_POR_EQUIPO = true;
+    }
+    OBJETIVOS_POR_EQUIPO[eq] = nuevos;
     cerrarModalObjetivos();
     renderGraficos();
   } catch (e) {
@@ -1609,6 +1667,8 @@ function renderGraficos() {
     subEquipo.textContent = (equipoSel && equipoSel.value) ? `Equipo: ${equipoSel.value}` : 'Todos los equipos';
   }
 
+  actualizarNotaObjetivos();
+
   // Base: ya viene filtrada por el panel general de arriba (Tipo, Equipo, Sector, Fecha desde/hasta)
   const base = FILTRADOS;
   const sectorSel = grafSectorActual();
@@ -1636,10 +1696,8 @@ function renderGraficos() {
         labels = lp.labels;
         datasets = lp.datasets;
       }
-      const obj = OBJETIVOS_GOTEO[p];
-      if (obj !== null && obj !== undefined && obj !== '' && labels.length) {
-        datasets.push({ label: 'Objetivo', data: labels.map(() => obj), borderColor: '#ff7043', backgroundColor: 'transparent', borderDash: [6,4], borderWidth: 2, pointRadius: 0, fill: false });
-      }
+      const dsObj = datasetObjetivo(p, labels);
+      if (dsObj) datasets.push(dsObj);
       mkChart('chartGoteo'+p, 'line', labels, datasets);
     });
   }
@@ -1732,10 +1790,13 @@ function renderGraficos() {
         const fechas = [...new Set([...lg.labels, ...ld.labels])].sort();
         const serie = (linea) => fechas.map(f => { const i = linea.labels.indexOf(f); return i >= 0 ? linea.values[i] : null; });
         const serieObs = (linea) => fechas.map(f => { const i = linea.labels.indexOf(f); return i >= 0 ? linea.observaciones[i] : undefined; });
-        mkChart('chartComp'+p, 'line', fechas, [
+        const dsComp = [
           { label: 'Goteo',   data: serie(lg), observaciones: serieObs(lg), borderColor: '#4caf50', backgroundColor: '#4caf5022', tension: 0.4, pointRadius: 3, fill: false, spanGaps: true },
           { label: 'Drenaje', data: serie(ld), observaciones: serieObs(ld), borderColor: '#ab47bc', backgroundColor: '#ab47bc22', tension: 0.4, pointRadius: 3, fill: false, spanGaps: true },
-        ]);
+        ];
+        const dsObj = datasetObjetivo(p, fechas, 'Objetivo Goteo');
+        if (dsObj) dsComp.push(dsObj);
+        mkChart('chartComp'+p, 'line', fechas, dsComp);
       });
     }
   }
