@@ -328,6 +328,18 @@
     }
     .hist-row { border-bottom: 1px solid #2c3b4a; padding: 10px 0; color: #fff; font-size: 13px; }
     .hist-meta { color: #8fa3b3; font-size: 11px; margin-top: 2px; }
+
+    /* RESUMEN GENERAL */
+    .mini-btn {
+      background: var(--surface); border: 1.5px solid var(--border); border-radius: 7px;
+      padding: 4px 10px; color: var(--muted); font-size: 11px; font-weight: 700; cursor: pointer;
+    }
+    .mini-btn.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+    .gen-nota { color: var(--muted); font-size: 11px; margin-top: 8px; }
+    .matriz td, .matriz th { text-align: center; }
+    .matriz td:first-child, .matriz th:first-child { text-align: left; white-space: nowrap; }
+    .matriz-val { font-weight: 800; font-size: 14px; }
+    .matriz-sub { font-size: 10px; color: var(--muted); margin-top: 2px; white-space: nowrap; }
   </style>
 </head>
 <body>
@@ -529,10 +541,10 @@
         <button class="graf-btn active" onclick="setGrafView('goteo',this)">💧 Goteo</button>
         <button class="graf-btn" onclick="setGrafView('drenaje',this)">🚿 Drenaje</button>
         <button class="graf-btn" onclick="setGrafView('humedad',this)">🌱 Humedad</button>
-        <button class="graf-btn" onclick="setGrafView('general',this)">📊 General</button>
         <button class="graf-btn" onclick="setGrafView('pctdrenaje',this)">📉 % Drenaje</button>
         <button class="graf-btn" onclick="setGrafView('comparacion',this)">🔀 Goteo vs Drenaje</button>
         <button class="graf-btn" onclick="setGrafView('lisimetro',this)">🧪 Lisímetro</button>
+        <button class="graf-btn" onclick="setGrafView('general',this)">📊 Resumen general</button>
       </div>
     </div>
     <div id="grafEquipoSubtitulo" style="color:var(--muted);font-size:12px;margin-bottom:16px;font-weight:600;"></div>
@@ -602,13 +614,49 @@
       </div>
     </div>
 
-    <!-- Vista General -->
+    <!-- Vista Resumen general (va al final de los botones) -->
     <div id="grafView-general" class="graf-view" style="display:none">
+
+      <!-- Fila 1: KPIs -->
+      <div class="kpi-grid" id="genKpis"></div>
+
+      <!-- Fila 2: matriz de estado por equipo -->
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-title">🧭 Estado por equipo — Goteo <span style="font-weight:400;text-transform:none;letter-spacing:0;">(promedio del período filtrado, comparado con el objetivo de cada equipo)</span></div>
+        <div class="table-wrap" id="genMatriz"></div>
+      </div>
+
+      <!-- Fila 3: dos medianos -->
       <div class="grid2">
-        <div class="card"><div class="card-title">📅 Todos los registros por día</div><div class="chart-container"><canvas id="chartGeneralDias"></canvas></div></div>
-        <div class="card"><div class="card-title">👷 Registros por trabajador</div><div class="chart-container"><canvas id="chartGeneralTrabajadores"></canvas></div></div>
-        <div class="card"><div class="card-title">📊 Goteo vs Drenaje por sector</div><div class="chart-container"><canvas id="chartGeneralSectores"></canvas></div></div>
-        <div class="card"><div class="card-title">🔢 Distribución por tipo</div><div class="chart-container"><canvas id="chartGeneralTipos"></canvas></div></div>
+        <div class="card">
+          <div class="card-title">💧 % Drenaje promedio por sector</div>
+          <div class="chart-container" style="height:280px"><canvas id="chartGenPctDrenaje"></canvas></div>
+          <div class="gen-nota">La franja verde marca el rango óptimo de % Drenaje.</div>
+        </div>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:16px;">
+            <div class="card-title" style="margin:0;">🧂 Drenaje − Goteo por sector</div>
+            <div style="display:flex;gap:6px;">
+              <button class="mini-btn gen-dif-btn active" onclick="setGenDif('CE',this)">CE</button>
+              <button class="mini-btn gen-dif-btn" onclick="setGenDif('pH',this)">pH</button>
+            </div>
+          </div>
+          <div class="chart-container" style="height:280px"><canvas id="chartGenDiferencia"></canvas></div>
+          <div class="gen-nota">Diferencia promedio en los días con medición de ambos. Positivo = el drenaje sale más alto que el goteo (en CE, posible acumulación de sales).</div>
+        </div>
+      </div>
+
+      <!-- Fila 4: tres chicos -->
+      <div class="grid3">
+        <div class="card"><div class="card-title">⚠️ % fuera de rango por parámetro</div><div class="chart-container" style="height:220px"><canvas id="chartGenFueraRango"></canvas></div></div>
+        <div class="card"><div class="card-title">🚜 Registros por equipo</div><div class="chart-container" style="height:220px"><canvas id="chartGenEquipos"></canvas></div></div>
+        <div class="card"><div class="card-title">👷 Registros por trabajador</div><div class="chart-container" style="height:220px"><canvas id="chartGenTrabajadores"></canvas></div></div>
+      </div>
+
+      <!-- Fila 5: actividad por día -->
+      <div class="card">
+        <div class="card-title">📅 Registros por día y tipo</div>
+        <div class="chart-container" style="height:200px"><canvas id="chartGeneralDias"></canvas></div>
       </div>
     </div>
 
@@ -1818,32 +1866,158 @@ function renderGraficos() {
   }
 
   if (currentGrafView === 'general') {
-    // Todos por dia
-    const d = getDias(base);
-    mkChart('chartGeneralDias', 'bar', d.labels, [
-      { label: 'Goteo',   data: d.labels.map(l => goteo.filter(r=>r.fecha===l).length),   backgroundColor: '#4caf5066', borderColor: '#4caf50', borderWidth:1 },
-      { label: 'Drenaje', data: d.labels.map(l => drenaje.filter(r=>r.fecha===l).length), backgroundColor: '#ce93d866', borderColor: '#ce93d8', borderWidth:1 },
-      { label: 'Humedad', data: d.labels.map(l => humedad.filter(r=>r.fecha===l).length), backgroundColor: '#ffd54f66', borderColor: '#ffd54f', borderWidth:1 },
-      { label: '% Drenaje', data: d.labels.map(l => pctDrenaje.filter(r=>r.fecha===l).length), backgroundColor: '#42a5f566', borderColor: '#42a5f5', borderWidth:1 },
-      { label: 'Lisímetro', data: d.labels.map(l => lisimetro.filter(r=>r.fecha===l).length), backgroundColor: '#2e6e8e66', borderColor: '#2e6e8e', borderWidth:1 },
-    ]);
-    // Por trabajador
-    const trab = {};
-    base.forEach(r => { if(r.trabajador) trab[r.trabajador.split(' ')[0]] = (trab[r.trabajador.split(' ')[0]]||0)+1; });
-    const tKeys = Object.keys(trab);
-    mkChart('chartGeneralTrabajadores', 'bar', tKeys, [{ label: 'Registros', data: tKeys.map(k=>trab[k]), backgroundColor: COLORS }]);
-    // Goteo vs Drenaje por sector
-    const sects = [...new Set([...goteo,...drenaje].map(r=>r.sector).filter(Boolean))].slice(0,8);
-    mkChart('chartGeneralSectores', 'bar', sects, [
-      { label: 'Goteo',   data: sects.map(s=>goteo.filter(r=>r.sector===s).length),   backgroundColor: '#4caf5066', borderColor:'#4caf50', borderWidth:1 },
-      { label: 'Drenaje', data: sects.map(s=>drenaje.filter(r=>r.sector===s).length), backgroundColor: '#ce93d866', borderColor:'#ce93d8', borderWidth:1 },
-    ]);
-    // Distribución por tipo
-    mkChart('chartGeneralTipos', 'doughnut',
-      ['Goteo','Drenaje','Humedad','% Drenaje','Lisímetro'],
-      [{ data: [goteo.length, drenaje.length, humedad.length, pctDrenaje.length, lisimetro.length], backgroundColor: ['#4caf50','#ce93d8','#ffd54f','#42a5f5','#2e6e8e'], borderWidth: 0 }]
+    renderResumenGeneral(base, goteo, drenaje, humedad, pctDrenaje, lisimetro);
+  }
+}
+
+// ── RESUMEN GENERAL ─────────────────────────────────────────────────────────
+let currentGenDif = 'CE';
+function setGenDif(param, btn) {
+  currentGenDif = param;
+  document.querySelectorAll('.gen-dif-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderGraficos();
+}
+
+const COLOR_ESTADO = { ok: '#4caf50', warn: '#ffd54f', danger: '#ef5350' };
+const DEC_PARAM = { pH: 2, CE: 2, Nitratos: 0, Potasio: 0, Calcio: 0, Sodio: 0, PorcentajeDrenaje: 1 };
+function fmtParam(p, v) { return fmtComma(v, DEC_PARAM[p] ?? 2); }
+function promedio(arr) { return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null; }
+function valoresNum(lista, campo) { return lista.map(r => parseFloat(r[campo])).filter(v => !isNaN(v)); }
+function ordenarSectores(lista) { return [...lista].sort((a, b) => a.localeCompare(b, 'es', { numeric: true })); }
+// "Juan Pérez Soto" → "Juan P." (evita juntar a dos "Juan" distintos en una misma barra)
+function etiquetaTrabajador(nombre) {
+  const partes = nombre.trim().split(/\s+/);
+  return partes.length > 1 ? `${partes[0]} ${partes[1][0]}.` : partes[0];
+}
+const SIN_LEYENDA = { legend: { display: false } };
+const ESCALA = { ticks: { color: '#6b9470', font: { size: 9 } }, grid: { color: '#1e3d22' } };
+
+function renderResumenGeneral(base, goteo, drenaje, humedad, pctDrenaje, lisimetro) {
+  const paramsQuim = ['pH','CE','Nitratos','Potasio','Calcio','Sodio'];
+  const paramsTodos = [...paramsQuim, 'PorcentajeDrenaje'];
+
+  // ── Fila 1: KPIs ──
+  let totalVals = 0, fuera = 0, alertasN = 0;
+  const porParam = {};
+  paramsTodos.forEach(p => porParam[p] = { total: 0, fuera: 0 });
+  base.filter(r => r.tipo !== 'Humedad').forEach(r => {
+    paramsTodos.forEach(p => {
+      const e = getEstado(p, r[p]);
+      if (!e) return;
+      totalVals++; porParam[p].total++;
+      if (e !== 'ok') { fuera++; porParam[p].fuera++; }
+      if (e === 'danger') alertasN++;
+    });
+  });
+  const pctFuera = totalVals ? (fuera / totalVals) * 100 : null;
+  const colorPctFuera = pctFuera === null ? 'var(--muted)' : pctFuera > 25 ? 'var(--danger)' : pctFuera > 10 ? 'var(--warn)' : 'var(--ok)';
+  const pctDrenProm = promedio(valoresNum(pctDrenaje, 'PorcentajeDrenaje'));
+  const estPct = getEstado('PorcentajeDrenaje', pctDrenProm);
+  const colorPct = estPct ? COLOR_ESTADO[estPct] : 'var(--muted)';
+
+  document.getElementById('genKpis').innerHTML = `
+    <div class="kpi"><div class="kpi-icon">📊</div><div class="kpi-value">${base.length}</div><div class="kpi-label">Registros del período</div></div>
+    <div class="kpi"><div class="kpi-icon">🚨</div><div class="kpi-value" style="color:${alertasN ? 'var(--danger)' : 'var(--ok)'}">${alertasN}</div><div class="kpi-label">Alertas (fuera de límite)</div></div>
+    <div class="kpi"><div class="kpi-icon">⚠️</div><div class="kpi-value" style="color:${colorPctFuera}">${pctFuera === null ? '—' : fmtComma(pctFuera, 1) + '%'}</div><div class="kpi-label">Mediciones fuera de rango</div></div>
+    <div class="kpi"><div class="kpi-icon">💧</div><div class="kpi-value" style="color:${colorPct}">${pctDrenProm === null ? '—' : fmtComma(pctDrenProm, 1) + '%'}</div><div class="kpi-label">% Drenaje promedio</div></div>
+  `;
+
+  // ── Fila 2: matriz de estado por equipo (Goteo vs objetivo del equipo) ──
+  const equiposMatriz = [...EQUIPOS, ...new Set(goteo.map(r => r.equipo).filter(e => e && !EQUIPOS.includes(e)))];
+  const filas = equiposMatriz.map(eq => {
+    const regs = goteo.filter(r => r.equipo === eq);
+    if (!regs.length) {
+      return `<tr><td><b>${eq}</b><div class="matriz-sub">Sin registros</div></td>${paramsQuim.map(() => '<td style="color:var(--dim)">—</td>').join('')}</tr>`;
+    }
+    const objEq = OBJETIVOS_POR_EQUIPO[eq] || {};
+    const celdas = paramsQuim.map(p => {
+      const v = promedio(valoresNum(regs, p));
+      if (v === null) return '<td style="color:var(--dim)">—</td>';
+      const est = getEstado(p, v);
+      const color = est ? COLOR_ESTADO[est] : 'var(--text)';
+      const fondo = est && est !== 'ok' ? `background:${COLOR_ESTADO[est]}14;` : '';
+      const obj = objEq[p];
+      let sub = '';
+      if (obj !== null && obj !== undefined && obj !== '' && !isNaN(obj)) {
+        const delta = v - obj;
+        sub = `<div class="matriz-sub">obj ${fmtParam(p, obj)} · ${delta >= 0 ? '+' : '−'}${fmtParam(p, Math.abs(delta))}</div>`;
+      }
+      return `<td style="${fondo}"><div class="matriz-val" style="color:${color}">${fmtParam(p, v)}</div>${sub}</td>`;
+    }).join('');
+    return `<tr><td><b>${eq}</b><div class="matriz-sub">${regs.length} registro${regs.length > 1 ? 's' : ''}</div></td>${celdas}</tr>`;
+  }).join('');
+  document.getElementById('genMatriz').innerHTML = `
+    <table class="matriz">
+      <thead><tr><th>Equipo</th>${paramsQuim.map(p => `<th>${p}</th>`).join('')}</tr></thead>
+      <tbody>${filas}</tbody>
+    </table>`;
+
+  // ── Fila 3a: % Drenaje promedio por sector, con franja del rango óptimo ──
+  const rp = RANGOS.PorcentajeDrenaje || {};
+  const sectPct = ordenarSectores([...new Set(pctDrenaje.map(r => r.sector).filter(Boolean))]);
+  const valsPct = sectPct.map(s => promedio(valoresNum(pctDrenaje.filter(r => r.sector === s), 'PorcentajeDrenaje')));
+  const colPct = valsPct.map(v => { const e = getEstado('PorcentajeDrenaje', v); return e ? COLOR_ESTADO[e] : '#6b9470'; });
+  const dsPct = [{ type: 'bar', label: '% Drenaje', data: valsPct, backgroundColor: colPct.map(c => c + '99'), borderColor: colPct, borderWidth: 1, order: 2 }];
+  if (rp.min !== null && rp.min !== undefined && rp.max !== null && rp.max !== undefined && sectPct.length) {
+    dsPct.push(
+      { type: 'line', label: 'Mín óptimo', data: sectPct.map(() => rp.min), borderColor: '#4caf5088', borderDash: [4,4], borderWidth: 1, pointRadius: 0, fill: false, order: 1 },
+      { type: 'line', label: 'Máx óptimo', data: sectPct.map(() => rp.max), borderColor: '#4caf5088', borderDash: [4,4], borderWidth: 1, pointRadius: 0, fill: '-1', backgroundColor: '#4caf501f', order: 1 }
     );
   }
+  mkChart('chartGenPctDrenaje', 'bar', sectPct, dsPct, { plugins: SIN_LEYENDA });
+
+  // ── Fila 3b: Drenaje − Goteo por sector (CE o pH) ──
+  const pDif = currentGenDif;
+  const sectDif = ordenarSectores([...new Set([...goteo, ...drenaje].map(r => r.sector).filter(Boolean))]);
+  const difs = [];
+  sectDif.forEach(s => {
+    const lg = getLinea(goteo.filter(r => r.sector === s), pDif);
+    const ld = getLinea(drenaje.filter(r => r.sector === s), pDif);
+    const d = [];
+    ld.labels.forEach((f, i) => { const j = lg.labels.indexOf(f); if (j >= 0) d.push(ld.values[i] - lg.values[j]); });
+    if (d.length) difs.push({ sector: s, valor: promedio(d) });
+  });
+  const colDif = difs.map(x => x.valor >= 0 ? '#ffa726' : '#42a5f5');
+  mkChart('chartGenDiferencia', 'bar', difs.map(x => x.sector), [{
+    label: `Drenaje − Goteo (${pDif})`, data: difs.map(x => x.valor),
+    backgroundColor: colDif.map(c => c + '99'), borderColor: colDif, borderWidth: 1
+  }], { plugins: SIN_LEYENDA });
+
+  // ── Fila 4a: % fuera de rango por parámetro ──
+  const paramsConDatos = paramsTodos.filter(p => porParam[p].total > 0);
+  const pctPorParam = paramsConDatos.map(p => (porParam[p].fuera / porParam[p].total) * 100);
+  const colFuera = pctPorParam.map(v => v > 25 ? COLOR_ESTADO.danger : v > 10 ? COLOR_ESTADO.warn : COLOR_ESTADO.ok);
+  mkChart('chartGenFueraRango', 'bar', paramsConDatos.map(nombreParam), [{
+    label: '% fuera de rango', data: pctPorParam,
+    backgroundColor: colFuera.map(c => c + '99'), borderColor: colFuera, borderWidth: 1
+  }], { indexAxis: 'y', plugins: SIN_LEYENDA, scales: { x: { ...ESCALA, min: 0, max: 100 }, y: ESCALA } });
+
+  // ── Fila 4b: registros por equipo (torta) ──
+  const cntEq = {};
+  base.forEach(r => { if (r.equipo) cntEq[r.equipo] = (cntEq[r.equipo] || 0) + 1; });
+  const eqKeys = Object.keys(cntEq).sort((a, b) => cntEq[b] - cntEq[a]);
+  mkChart('chartGenEquipos', 'doughnut', eqKeys, [{ data: eqKeys.map(k => cntEq[k]), backgroundColor: eqKeys.map((_, i) => COLORS[i % COLORS.length]), borderWidth: 0 }],
+    { plugins: { legend: { position: 'right', labels: { color: '#6b9470', font: { size: 10 }, boxWidth: 10 } } } });
+
+  // ── Fila 4c: registros por trabajador (por nombre completo, no solo el primero) ──
+  const cntTrab = {};
+  base.forEach(r => { const n = (r.trabajador || '').trim(); if (n) cntTrab[n] = (cntTrab[n] || 0) + 1; });
+  const trabKeys = Object.keys(cntTrab).sort((a, b) => cntTrab[b] - cntTrab[a]);
+  mkChart('chartGenTrabajadores', 'bar', trabKeys.map(etiquetaTrabajador), [{
+    label: 'Registros', data: trabKeys.map(k => cntTrab[k]), backgroundColor: '#42a5f566', borderColor: '#42a5f5', borderWidth: 1
+  }], { indexAxis: 'y', plugins: SIN_LEYENDA });
+
+  // ── Fila 5: registros por día, apilados por tipo ──
+  const d = getDias(base);
+  const porDia = (lista) => d.labels.map(l => lista.filter(r => r.fecha === l).length);
+  mkChart('chartGeneralDias', 'bar', d.labels, [
+    { label: 'Goteo',     data: porDia(goteo),      backgroundColor: '#4caf5099' },
+    { label: 'Drenaje',   data: porDia(drenaje),    backgroundColor: '#ce93d899' },
+    { label: 'Humedad',   data: porDia(humedad),    backgroundColor: '#ffd54f99' },
+    { label: '% Drenaje', data: porDia(pctDrenaje), backgroundColor: '#42a5f599' },
+    { label: 'Lisímetro', data: porDia(lisimetro),  backgroundColor: '#2e6e8e99' },
+  ], { scales: { x: { ...ESCALA, stacked: true }, y: { ...ESCALA, stacked: true } } });
 }
 
 // ── ALERTAS Z-SCORE ───────────────────────────────────────────────────────────
