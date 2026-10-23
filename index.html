@@ -327,7 +327,52 @@
       border: 1px solid #33475a; background: #0f1720; color: #fff; font-size: 12px;
     }
     .hist-row { border-bottom: 1px solid #2c3b4a; padding: 10px 0; color: #fff; font-size: 13px; }
+    .input-modal, .modal-box textarea, .modal-box select.input-modal {
+      width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 6px;
+      border: 1px solid #33475a; background: #0f1720; color: #fff; font-size: 13px; font-family: inherit;
+    }
+    .obj-row { border-bottom: 1px solid #2c3b4a; padding: 10px 0; }
+    .obj-cab { display: grid; grid-template-columns: 90px 1fr 1fr 1fr; gap: 8px; align-items: end; }
+    .obj-cab label { font-size: 10px; color: #8fa3b3; display: flex; flex-direction: column; gap: 3px; }
+    .obj-cab input { width: 100%; box-sizing: border-box; padding: 6px 8px; border-radius: 6px; border: 1px solid #33475a; background: #0f1720; color: #fff; font-size: 12px; }
+    .obj-actual { color: #fff; font-weight: 800; font-size: 15px; }
+    .obj-tramos { margin: 6px 0 0 98px; font-size: 11px; color: #8fa3b3; display: flex; flex-direction: column; gap: 2px; }
+    .obj-tramos button { background: none; border: none; color: #ef5350; cursor: pointer; font-size: 11px; padding: 0 4px; }
+    @media (max-width: 560px) { .obj-cab { grid-template-columns: 1fr 1fr; } .obj-tramos { margin-left: 0; } }
     .hist-meta { color: #8fa3b3; font-size: 11px; margin-top: 2px; }
+
+
+    /* ENCABEZADO EN CELULAR */
+    @media (max-width: 700px) {
+      header { flex-wrap: wrap; padding: 12px 16px; gap: 8px; position: static; }
+      .header-title { flex: 1 1 calc(100% - 50px); }
+      .last-update { order: 5; flex-basis: 100%; text-align: left; }
+      header button { flex: 1 1 auto; margin: 0 !important; padding: 8px 10px !important; font-size: 12px !important; }
+      .container { padding: 16px; }
+      .tabs { overflow-x: auto; }
+      .tab { white-space: nowrap; padding: 10px 12px; }
+    }
+
+    /* ACCIONES EN REGISTROS */
+    .acc-btn { background: transparent; border: 1px solid var(--border); border-radius: 6px; padding: 3px 7px; cursor: pointer; font-size: 12px; margin-right: 3px; }
+    .acc-btn:hover { border-color: var(--accent); }
+    .chip-editado { display:inline-block; background:#42a5f522; color:#90caf9; border:1px solid #42a5f555; border-radius:6px; padding:1px 6px; font-size:10px; font-weight:700; cursor:pointer; white-space:nowrap; margin-top:3px; }
+    .reg-campos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .reg-campos label, .reg-campo-full label { font-size: 10px; color: #8fa3b3; display: flex; flex-direction: column; gap: 3px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
+    .reg-campo-full { grid-column: 1 / -1; }
+    .reg-resumen { background: #0f1720; border: 1px solid #2c3b4a; border-radius: 8px; padding: 10px 12px; color: #cfd8dc; font-size: 12px; margin-bottom: 12px; }
+    .sec-chips { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 6px; }
+    .sec-chip { background: transparent; border: 1px solid #33475a; color: #8fa3b3; border-radius: 6px; padding: 6px 8px; font-size: 12px; cursor: pointer; text-align: left; }
+    .sec-chip.on { background: #ffd54f22; border-color: #ffd54f88; color: #ffe082; font-weight: 700; }
+    .anulado-item { border: 1px solid #2c3b4a; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; color: #fff; font-size: 13px; }
+    @media (max-width: 560px) { .reg-campos { grid-template-columns: 1fr; } }
+
+    /* HITOS */
+    .hito-chip { display:inline-block; background:#ffd54f22; color:#ffd54f; border:1px solid #ffd54f55; border-radius:6px; padding:1px 6px; font-size:11px; font-weight:700; white-space:nowrap; }
+    .hitos-lista { display:flex; flex-direction:column; gap:6px; max-height:180px; overflow:auto; }
+    .hitos-item { display:flex; gap:10px; align-items:baseline; font-size:12px; color:var(--text); }
+    .hitos-item .f { color:var(--muted); font-weight:700; min-width:78px; }
+    .vol-sub { color:var(--muted); font-size:10px; display:block; }
 
     /* RESUMEN GENERAL */
     .mini-btn {
@@ -368,7 +413,7 @@
   </div>
   <div class="last-update" id="lastUpdate">Cargando...</div>
   <button id="downloadBtn" onclick="descargarExcel()" style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-weight:700;font-size:13px;cursor:pointer;margin-right:8px;">📥 Descargar Excel</button>
-  <button id="refreshBtn" onclick="cargarDatos()">↻ Actualizar</button>
+  <button id="refreshBtn" onclick="recargarTodo()">↻ Actualizar</button>
   <button id="logoutBtn" style="background:#5a6b7a;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-weight:700;font-size:13px;cursor:pointer;margin-left:8px;">Salir</button>
 </header>
 
@@ -390,11 +435,6 @@
       <label>Equipo</label>
       <select id="filtroEquipo" onchange="aplicarFiltros()">
         <option value="">Todos</option>
-        <option>Equipo 3 FRU</option>
-        <option>Equipo HID 3 FRU</option>
-        <option>Equipo 1 FRA</option>
-        <option>Equipo 1 MO</option>
-        <option>Equipo 1 ARA</option>
       </select>
     </div>
     <div class="filter-group">
@@ -405,11 +445,11 @@
     </div>
     <div class="filter-group">
       <label>Fecha desde</label>
-      <input type="date" id="filtroDesde" onchange="aplicarFiltros()" />
+      <input type="date" id="filtroDesde" onchange="cambioFechas()" />
     </div>
     <div class="filter-group">
       <label>Fecha hasta</label>
-      <input type="date" id="filtroHasta" onchange="aplicarFiltros()" />
+      <input type="date" id="filtroHasta" onchange="cambioFechas()" />
     </div>
     <button id="searchBtn" onclick="aplicarFiltros()" style="background:var(--accent);color:#0a1a0d;border:none;border-radius:8px;padding:8px 16px;font-weight:700;font-size:13px;cursor:pointer;align-self:flex-end;">🔍 Buscar</button>
     <button id="clearFilters" onclick="limpiarFiltros()">✕ Limpiar</button>
@@ -419,7 +459,7 @@
   <div class="tabs">
     <button class="tab active" onclick="showTab('resumen', this)">📊 Resumen</button>
     <button class="tab" onclick="showTab('graficos', this)">📈 Gráficos</button>
-    <button class="tab" onclick="showTab('alertas', this)">🚨 Alertas Z-Score</button>
+    <button class="tab" onclick="showTab('alertas', this)">🚨 Alertas</button>
     <button class="tab" onclick="showTab('registros', this)">📋 Registros</button>
   </div>
 
@@ -480,6 +520,11 @@
   <div class="modal-overlay" id="rangosModal">
     <div class="modal-box">
       <h3>Editar rangos de referencia</h3>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+        <div class="filter-group"><label>Aplica a</label><select id="rangosEquipo" onchange="renderFormRangos()"></select></div>
+        <div class="filter-group" id="rangosTipoWrap"><label>Tipo de medición</label><select id="rangosTipo" onchange="renderFormRangos()"></select></div>
+      </div>
+      <div id="rangosAyuda" style="color:#8fa3b3;font-size:12px;margin-bottom:12px;"></div>
       <div id="rangosForm"></div>
       <div class="filter-group" style="margin-top:12px;">
         <label>Motivo del cambio</label>
@@ -514,19 +559,36 @@
   <!-- MODAL: EDITAR OBJETIVOS DE GOTEO -->
   <div class="modal-overlay" id="objetivosModal">
     <div class="modal-box">
-      <h3>Editar objetivos de Goteo por equipo</h3>
+      <h3>Objetivos de Goteo por equipo</h3>
       <div class="filter-group" style="margin-bottom:12px;">
         <label>Equipo</label>
         <select id="objetivosEquipo" onchange="renderFormObjetivos()"></select>
       </div>
       <div style="color:var(--muted);font-size:12px;margin-bottom:14px;">
-        Valor de referencia definido por el asesor. Se dibuja como línea de objetivo en cada gráfico — no afecta el color de alerta.
+        Cada parámetro tiene su propia historia. Para registrar un cambio, escribe el <b>nuevo valor</b> y desde qué fecha rige
+        (puede ser una fecha pasada). Solo cambian los parámetros que completes; el valor anterior queda en el historial.
+        En los gráficos la línea de objetivo hace un escalón en esa fecha.
       </div>
       <div id="objetivosForm"></div>
-      <div style="display:flex;gap:8px;margin-top:16px;">
+      <div class="filter-group" style="margin-top:12px;">
+        <label>Motivo del cambio (obligatorio)</label>
+        <input type="text" id="objetivosMotivo" class="input-modal" placeholder="Ej: indicación del asesor, nueva receta R-12...">
+      </div>
+      <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;">
         <button class="graf-btn" onclick="guardarObjetivos()">Guardar cambios</button>
         <button class="graf-btn" onclick="cerrarModalObjetivos()">Cancelar</button>
+        <button class="graf-btn" onclick="abrirHistorialGeneral('objetivos_historial')">📜 Historial de cambios</button>
       </div>
+    </div>
+  </div>
+
+  <!-- MODAL GENÉRICO: editar / eliminar / ver eliminados / historial de un registro / nuevo hito -->
+  <div class="modal-overlay" id="regModal">
+    <div class="modal-box">
+      <h3 id="regModalTitulo"></h3>
+      <div id="regModalCuerpo"></div>
+      <div id="regModalError" style="color:#ef5350;font-size:12px;margin-top:10px;min-height:14px;"></div>
+      <div id="regModalBotones" style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;"></div>
     </div>
   </div>
 
@@ -557,6 +619,14 @@
       </div>
     </div>
     <div id="grafEquipoSubtitulo" style="color:var(--muted);font-size:12px;margin-bottom:16px;font-weight:600;"></div>
+    <div class="card" id="hitosCard" style="margin-bottom:18px;border-color:#ffd54f55;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+        <div class="card-title" style="color:#ffd54f;margin:0;">📌 Hitos del período <span id="hitosCuenta" style="font-weight:400;text-transform:none;letter-spacing:0;"></span></div>
+        <button class="mini-btn" onclick="abrirNuevoHito()">＋ Nuevo hito</button>
+      </div>
+      <div class="hitos-lista" id="hitosLista"></div>
+      <div style="color:var(--muted);font-size:11px;margin-top:8px;">Se marcan en los gráficos como líneas verticales amarillas. Se registran desde la app de captura o con "＋ Nuevo hito". Los 🎯 cambios de objetivo se agregan solos y solo aparecen en los gráficos de ese parámetro.</div>
+    </div>
 
     <!-- Vista Goteo / Drenaje -->
     <div id="grafView-goteo" class="graf-view">
@@ -682,7 +752,8 @@
         <div class="card"><div class="card-title">📅 Registros por día</div><div class="chart-container"><canvas id="chartPctDrenajeDias"></canvas></div></div>
         <div class="card"><div class="card-title">🗺️ Top sectores</div><div class="chart-container"><canvas id="chartPctDrenajeSectores"></canvas></div></div>
       </div>
-      <div class="card"><div class="card-title">📈 % Drenaje promedio</div><div class="chart-container" style="height:220px"><canvas id="chartPctDrenajeValor"></canvas></div></div>
+      <div class="card"><div class="card-title">📈 % Drenaje del día <span style="font-weight:400;text-transform:none;letter-spacing:0;">(total drenado ÷ total goteado)</span></div><div class="chart-container" style="height:220px"><canvas id="chartPctDrenajeValor"></canvas></div></div>
+      <div class="card"><div class="card-title">🧪 Volumen por día (ml) <span style="font-weight:400;text-transform:none;letter-spacing:0;">— suma de los riegos registrados con volumen</span></div><div class="chart-container" style="height:220px"><canvas id="chartPctDrenajeVol"></canvas></div></div>
     </div>
 
     <!-- Vista Goteo vs Drenaje (mezclado, por sector y parámetro) -->
@@ -722,7 +793,8 @@
   <!-- TAB: ALERTAS -->
   <div id="tab-alertas" class="tab-content">
     <div class="card">
-      <div class="card-title">🚨 Alertas por Z-Score — valores fuera de rango</div>
+      <div class="card-title">🚨 Alertas — valores fuera de rango</div>
+      <div id="alertasResumen" style="font-size:13px;margin-bottom:12px;"></div>
       <div id="alertasContainer">
         <div class="empty">Sin alertas activas</div>
       </div>
@@ -730,10 +802,13 @@
     <br>
     <div class="card">
       <div class="card-title">📏 Rangos de referencia</div>
-      <div style="display:flex;gap:8px;margin-bottom:14px;">
-        <button class="graf-btn" onclick="abrirModalRangos()">⚙️ Editar rangos de referencia</button>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px;">
+        <div class="filter-group"><label>Ver rangos de</label><select id="tablaRangosEquipo" onchange="renderTablaRangos()"></select></div>
+        <div class="filter-group" id="tablaRangosTipoWrap"><label>Tipo de medición</label><select id="tablaRangosTipo" onchange="renderTablaRangos()"></select></div>
+        <button class="graf-btn" onclick="abrirModalRangos(true)">⚙️ Editar estos rangos</button>
         <button class="graf-btn" onclick="abrirHistorialRangos()">📜 Historial de cambios</button>
       </div>
+      <div id="tablaRangosAyuda" style="color:var(--muted);font-size:12px;margin-bottom:10px;"></div>
       <table>
         <thead>
           <tr>
@@ -741,10 +816,11 @@
             <th>Rango Óptimo</th>
             <th>Alerta Baja</th>
             <th>Alerta Alta</th>
+            <th>Origen</th>
           </tr>
         </thead>
         <tbody id="tablaRangos">
-          <tr><td colspan="4" class="empty">Cargando...</td></tr>
+          <tr><td colspan="5" class="empty">Cargando...</td></tr>
         </tbody>
       </table>
     </div>
@@ -753,7 +829,11 @@
   <!-- TAB: REGISTROS -->
   <div id="tab-registros" class="tab-content">
     <div class="card">
-      <div class="card-title">📋 Registros</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+        <div class="card-title" style="margin:0;">📋 Registros</div>
+        <button class="mini-btn" id="btnVerEliminados" onclick="abrirEliminados()">🗑️ Ver eliminados</button>
+      </div>
+      <div style="color:var(--muted);font-size:11px;margin:-4px 0 12px;">✏️ Editar y 🗑️ Eliminar piden un motivo y quedan en el historial. Lo eliminado no se borra de la base: se puede restaurar desde "Ver eliminados".</div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:flex-end;">
         <div class="filter-group" style="max-width:220px;position:relative;">
           <label>Ver medición</label>
@@ -834,6 +914,19 @@
         </table>
       </div>
     </div>
+    <br>
+    <div class="card" style="border-color:#ffd54f55;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+        <div class="card-title" style="color:#ffd54f;margin:0;">📌 Hitos <span id="tablaHitosCuenta" style="font-weight:400;text-transform:none;letter-spacing:0;"></span></div>
+        <button class="mini-btn" onclick="abrirNuevoHito()">＋ Nuevo hito</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Fecha</th><th>Equipo</th><th>Sector</th><th>Tipo</th><th>Descripción</th><th>Registrado por</th><th>Acciones</th></tr></thead>
+          <tbody id="tablaHitosBody"><tr><td colspan="7" class="empty">Sin hitos</td></tr></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
 </div>
@@ -863,7 +956,7 @@ const RANGOS_DEFAULT = {
   PorcentajeDrenaje: { min: 30, max: 40, alerta_baja: 20, alerta_alta: 50 },
 };
 let RANGOS = JSON.parse(JSON.stringify(RANGOS_DEFAULT)); // se sobreescribe con Firestore al cargar
-let ME = { uid: null, nombre: '' }; // datos del usuario logueado, para trazabilidad
+let ME = { uid: null, nombre: '' }; // datos del usuario logueado, para trazabilidad (quién editó, eliminó, etc.)
 
 // Nombres legibles para parámetros cuyo id interno no es el nombre a mostrar
 const NOMBRE_PARAM = { PorcentajeDrenaje: '% Drenaje' };
@@ -871,17 +964,22 @@ function nombreParam(p) { return NOMBRE_PARAM[p] || p; }
 
 // Objetivos de Goteo (líneas de referencia en los gráficos, no afectan el color de alerta)
 // Ahora son POR EQUIPO: cada equipo tiene sus propios objetivos
-const EQUIPOS = ['Equipo 3 FRU','Equipo HID 3 FRU','Equipo 1 FRA','Equipo 1 MO','Equipo 1 ARA'];
+// ÚNICO lugar donde se definen los equipos y su cultivo. El filtro de Equipo, los selectores
+// "Ver equipo", los objetivos y los rangos se arman todos desde esta lista.
+// Los sectores son los mismos que en la app de captura (se usan al editar registros y al crear hitos)
+const EQUIPOS_CONFIG = [
+  { nombre: 'Equipo 3 FRU',     cultivo: 'Frutilla',  sectores: ['Sector 09','Sector 10','Sector 11','Sector 12-Norte','Sector 12-Sur','Sector 13-Norte','Sector 13-Sur','Sector 14','Sector 15','Sector 16','Sector 17','Sector 18','Sector 19-Norte','Sector 19-Sur','Sector 20','Sector 21','Sector 22','Sector 23'] },
+  { nombre: 'Equipo HID 3 FRU', cultivo: 'Frutilla',  sectores: ['Sector 1','Sector 2','Sector 3','Sector 4','Sector 5','Sector 6','Sector 7','Playa 3'] },
+  { nombre: 'Equipo 1 FRA',     cultivo: 'Frambuesa', sectores: ['Sector 3','Sector 4','Sector 5','Sector 6','Sector 16','Sector 17','Sector 18','Sector 19','Sector 20'] },
+  { nombre: 'Equipo 1 MO',      cultivo: 'Mora',      sectores: ['Sector 1','Sector 2B','Sector 7','Sector 9','Sector 11'] },
+  { nombre: 'Equipo 1 ARA',     cultivo: 'Arándano',  sectores: ['Sector 1','Sector 6','Sector 7','Sector 8'] },
+];
+const sectoresDe = eq => (EQUIPOS_CONFIG.find(e => e.nombre === eq) || {}).sectores || [];
+const EQUIPOS = EQUIPOS_CONFIG.map(e => e.nombre);
 const PARAMS_OBJ = ['pH','CE','Nitratos','Potasio','Calcio','Sodio'];
 
 // Cada equipo pertenece a un cultivo (Frutilla tiene dos equipos)
-const CULTIVO_POR_EQUIPO = {
-  'Equipo 3 FRU':     'Frutilla',
-  'Equipo HID 3 FRU': 'Frutilla',
-  'Equipo 1 FRA':     'Frambuesa',
-  'Equipo 1 MO':      'Mora',
-  'Equipo 1 ARA':     'Arándano',
-};
+const CULTIVO_POR_EQUIPO = Object.fromEntries(EQUIPOS_CONFIG.map(e => [e.nombre, e.cultivo]));
 function cultivoDe(equipo) { return CULTIVO_POR_EQUIPO[equipo] || ''; }
 
 // ── SELECTOR DE EQUIPO DE LA PESTAÑA RESUMEN (independiente del filtro de arriba y de Gráficos) ──
@@ -920,19 +1018,40 @@ function setResumenEquipo(eq) {
   renderSemaforos();
 }
 const OBJETIVOS_GOTEO_DEFAULT = { pH: 6.0, CE: 1.6, Nitratos: 665, Potasio: 209, Calcio: 89, Sodio: null };
-let OBJETIVOS_POR_EQUIPO = {};      // { 'Equipo 3 FRU': { pH, CE, ... }, ... }
-let OBJETIVOS_YA_POR_EQUIPO = false; // true si Firestore ya tiene la estructura nueva
 
 let DATOS = [];
 let FILTRADOS = [];
 let charts = {};
 
 // ── CARGAR DATOS (desde Firestore) ──────────────────────────────────────────
+// Antes se descargaba TODA la colección cada vez. Ahora se piden solo las mediciones del rango de fechas
+// del filtro (con 1 día de margen a cada lado; el filtro exacto lo hace aplicarFiltros()).
+// IMPORTANTE: requiere que el campo "fecha" esté guardado como fecha de Firestore (Timestamp).
+// Si hubiera mediciones con la fecha guardada como texto, poner CARGA_POR_RANGO = false.
+const CARGA_POR_RANGO = true;
+
+function consultaMediciones() {
+  const col = FB.collection(FB.db, 'mediciones');
+  const desde = document.getElementById('filtroDesde').value;
+  const hasta = document.getElementById('filtroHasta').value;
+  if (!CARGA_POR_RANGO || !desde || !hasta || !FB.where || !FB.Timestamp) return col;
+  const ini = new Date(desde + 'T00:00:00'); ini.setDate(ini.getDate() - 1);
+  const fin = new Date(hasta + 'T00:00:00'); fin.setDate(fin.getDate() + 2);
+  return FB.query(col, FB.where('fecha', '>=', FB.Timestamp.fromDate(ini)), FB.where('fecha', '<', FB.Timestamp.fromDate(fin)));
+}
+
+// Al cambiar las fechas se vuelve a consultar (con una pequeña espera para no consultar por cada tecla)
+let _timerFechas = null;
+function cambioFechas() {
+  clearTimeout(_timerFechas);
+  _timerFechas = setTimeout(cargarDatos, 600);
+}
+
 async function cargarDatos() {
   document.getElementById('lastUpdate').textContent = 'Actualizando...';
   try {
-    const snap = await FB.getDocs(FB.collection(FB.db, 'mediciones'));
-    DATOS = snap.docs.map(doc => {
+    const snap = await FB.getDocs(consultaMediciones());
+    const todos = snap.docs.map(doc => {
       const r = doc.data();
       const fechaJS = r.fecha && r.fecha.toDate ? r.fecha.toDate() : r.fecha;
       const creadoJS = r.creado_en && r.creado_en.toDate ? r.creado_en.toDate() : null;
@@ -941,9 +1060,14 @@ async function cargarDatos() {
         id: doc.id,
         trabajador: r.trabajador_nombre || '',
         fecha: normalizarFecha(fechaJS),
-        hora: creadoJS ? creadoJS.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }) : ''
+        hora: creadoJS ? creadoJS.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }) : '',
+        creadoMs: creadoJS ? creadoJS.getTime() : 0
       };
     });
+    // Los eliminados no se borran de la base: quedan marcados (anulado: true) y solo se ven en "Ver eliminados"
+    DATOS = todos.filter(r => !r.anulado && r.tipo !== 'Hito');
+    HITOS_DATOS = todos.filter(r => !r.anulado && r.tipo === 'Hito');
+    ANULADOS = todos.filter(r => r.anulado);
     aplicarFiltros();
     document.getElementById('lastUpdate').textContent =
       'Actualizado: ' + new Date().toLocaleTimeString('es-CL');
@@ -953,17 +1077,30 @@ async function cargarDatos() {
   }
 }
 
+// Fecha AAAA-MM-DD según el reloj local (Chile), no UTC.
+// Antes se usaba toISOString(), que después de las 21:00 (20:00 en invierno) ya daba el día siguiente.
+function fechaLocalISO(d = new Date()) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 function normalizarFecha(f) {
   if (!f) return '';
   try {
+    // Texto "AAAA-MM-DD..." → se respeta tal cual (new Date() lo leería como UTC y podría correr un día)
+    if (typeof f === 'string' && /^\d{4}-\d{2}-\d{2}/.test(f)) return f.slice(0, 10);
     const d = new Date(f);
     if (isNaN(d.getTime())) return String(f);
-    return d.toISOString().split('T')[0];
+    // Fecha guardada como medianoche UTC exacta (típico de un <input type="date">) → esa es la fecha real
+    if (d.getUTCHours() === 0 && d.getUTCMinutes() === 0 && d.getUTCSeconds() === 0) return d.toISOString().slice(0, 10);
+    return fechaLocalISO(d);
   } catch(e) { return String(f); }
 }
 
 // ── FILTROS ───────────────────────────────────────────────────────────────────
 function aplicarFiltros() {
+  alertasLimite = 30;
+  const btnElim = document.getElementById('btnVerEliminados');
+  if (btnElim) btnElim.textContent = `🗑️ Ver eliminados${ANULADOS.length ? ' (' + ANULADOS.length + ')' : ''}`;
   const tipo    = document.getElementById('filtroTipo').value;
   const equipo  = document.getElementById('filtroEquipo').value;
   const sector  = document.getElementById('filtroSector').value;
@@ -996,9 +1133,9 @@ function aplicarFiltros() {
 function renderTodo() { aplicarFiltros(); }
 
 function limpiarFiltros() {
-  ['filtroTipo','filtroEquipo','filtroSector','filtroDesde','filtroHasta']
-    .forEach(id => document.getElementById(id).value = '');
-  aplicarFiltros();
+  ['filtroTipo','filtroEquipo','filtroSector'].forEach(id => document.getElementById(id).value = '');
+  fechasPorDefecto();
+  cargarDatos();
 }
 
 function actualizarSectores() {
@@ -1022,17 +1159,39 @@ function renderKPIs() {
     <div class="kpi"><div class="kpi-icon">🚿</div><div class="kpi-value">${drenaje.length}</div><div class="kpi-label">Registros Drenaje</div></div>
     <div class="kpi"><div class="kpi-icon">🌱</div><div class="kpi-value">${humedad.length}</div><div class="kpi-label">Registros Humedad</div></div>
     <div class="kpi"><div class="kpi-icon">📊</div><div class="kpi-value">${datosRes.length}</div><div class="kpi-label">Total Registros</div></div>
-    <div class="kpi"><div class="kpi-icon">🚨</div><div class="kpi-value" style="color:${alertas > 0 ? 'var(--danger)' : 'var(--ok)'}">${alertas}</div><div class="kpi-label">Alertas Z-Score</div></div>
+    <div class="kpi"><div class="kpi-icon">🚨</div><div class="kpi-value" style="color:${alertas > 0 ? 'var(--danger)' : 'var(--ok)'}">${alertas}</div><div class="kpi-label">Alertas (fuera de límite)</div></div>
   `;
 }
 
 // ── RANGOS DE REFERENCIA (editables, con historial) ─────────────────────────
+// ── RANGOS: un rango GENERAL por parámetro + EXCEPCIONES por equipo y tipo de medición ──
+// Firestore configuracion/rangos_referencia:
+//   { valores: { pH: {...}, CE: {...}, ... },                       ← rango general (como antes)
+//     por_equipo: { 'Equipo 1 ARA': { Goteo: { pH: {...} | null } } } } ← excepciones (null = usa el general)
+// Si un equipo/tipo no tiene excepción para un parámetro, se usa el general. Así nada cambia hasta que se edite.
+let RANGOS_EQUIPO = {};
+const TIPOS_RANGO = ['Goteo', 'Drenaje', 'Lisimetro', 'PorcentajeDrenaje'];
+const NOMBRE_TIPO = { Goteo: 'Goteo', Drenaje: 'Drenaje', Lisimetro: 'Lisímetro', PorcentajeDrenaje: '% Drenaje', Humedad: 'Humedad' };
+function paramsDeTipo(tipo) {
+  if (tipo === 'PorcentajeDrenaje') return ['PorcentajeDrenaje'];
+  if (tipo === 'Humedad') return [];
+  return ['pH','CE','Nitratos','Potasio','Calcio','Sodio'];
+}
+function rangoPropio(param, tipo, equipo) {
+  return (equipo && tipo && RANGOS_EQUIPO[equipo] && RANGOS_EQUIPO[equipo][tipo] && RANGOS_EQUIPO[equipo][tipo][param]) || null;
+}
+function rangoPara(param, tipo, equipo) {
+  return rangoPropio(param, tipo, equipo) || RANGOS[param];
+}
+const esNum = v => v !== null && v !== undefined && v !== '' && !isNaN(v);
+
 async function cargarRangos() {
   try {
     const ref = FB.doc(FB.db, 'configuracion', 'rangos_referencia');
     const snap = await FB.getDoc(ref);
     if (snap.exists()) {
       RANGOS = snap.data().valores || RANGOS;
+      RANGOS_EQUIPO = snap.data().por_equipo || {};
     } else {
       // Primera vez: se crea el documento con los valores por defecto
       await FB.setDoc(ref, { valores: RANGOS_DEFAULT });
@@ -1043,47 +1202,85 @@ async function cargarRangos() {
   }
 }
 
-// ── OBJETIVOS DE GOTEO POR EQUIPO (líneas de referencia en gráficos, no afectan el color de alerta) ──
-// Firestore: configuracion/objetivos_goteo → { por_equipo: { 'Equipo 3 FRU': {pH,CE,...}, ... } }
-// Si el documento todavía tiene el formato viejo ({ valores: {...} } global), esos valores
-// se copian a cada equipo como punto de partida, y se guarda la estructura nueva al primer cambio.
+// ── OBJETIVOS DE GOTEO POR EQUIPO, CON HISTORIA POR PARÁMETRO ───────────────────
+// Firestore configuracion/objetivos_goteo:
+//   por_equipo: { eq: { pH, CE, ... } }          ← valor vigente hoy (compatible con versiones anteriores)
+//   base:       { eq: { pH, CE, ... } }          ← valor "desde siempre" (antes del primer cambio con fecha)
+//   tramos:     { eq: { CE: [ { desde:'AAAA-MM-DD', valor, usuario_nombre, motivo, registrado } ] } }
+// Si no hay tramos, el valor de por_equipo rige para todas las fechas (la línea se ve recta, como antes).
+let OBJ_BASE = {};
+let OBJ_TRAMOS = {};
+let OBJETIVOS_YA_POR_EQUIPO = false;
+
 async function cargarObjetivosGoteo() {
   try {
-    const ref = FB.doc(FB.db, 'configuracion', 'objetivos_goteo');
-    const snap = await FB.getDoc(ref);
+    const snap = await FB.getDoc(FB.doc(FB.db, 'configuracion', 'objetivos_goteo'));
     const data = snap.exists() ? snap.data() : {};
+    let actuales;
     if (data.por_equipo) {
       OBJETIVOS_YA_POR_EQUIPO = true;
-      OBJETIVOS_POR_EQUIPO = data.por_equipo;
-      // Equipo nuevo sin objetivos todavía → queda "sin definir"
-      EQUIPOS.forEach(e => {
-        if (!OBJETIVOS_POR_EQUIPO[e]) OBJETIVOS_POR_EQUIPO[e] = Object.fromEntries(PARAMS_OBJ.map(p => [p, null]));
-      });
+      actuales = data.por_equipo;
     } else {
       OBJETIVOS_YA_POR_EQUIPO = false;
-      const base = data.valores || OBJETIVOS_GOTEO_DEFAULT;
-      OBJETIVOS_POR_EQUIPO = Object.fromEntries(EQUIPOS.map(e => [e, { ...base }]));
+      const g = data.valores || OBJETIVOS_GOTEO_DEFAULT;
+      actuales = Object.fromEntries(EQUIPOS.map(e => [e, { ...g }]));
     }
+    OBJ_TRAMOS = data.tramos || {};
+    OBJ_BASE = {};
+    EQUIPOS.forEach(e => {
+      OBJ_BASE[e] = {};
+      PARAMS_OBJ.forEach(p => {
+        const tieneTramos = ((OBJ_TRAMOS[e] || {})[p] || []).length > 0;
+        const b = data.base && data.base[e] ? data.base[e][p] : undefined;
+        OBJ_BASE[e][p] = tieneTramos && b !== undefined ? b : ((actuales[e] || {})[p] ?? null);
+      });
+    });
   } catch (e) {
     console.error('Error cargando objetivos de Goteo, se usan los valores por defecto:', e);
-    OBJETIVOS_POR_EQUIPO = Object.fromEntries(EQUIPOS.map(e => [e, { ...OBJETIVOS_GOTEO_DEFAULT }]));
+    OBJ_BASE = Object.fromEntries(EQUIPOS.map(e => [e, { ...OBJETIVOS_GOTEO_DEFAULT }]));
+    OBJ_TRAMOS = {};
   }
 }
 
-// Devuelve el dataset de línea "Objetivo" para un parámetro, según el Equipo elegido en el filtro de arriba.
-// Sin equipo elegido no se dibuja nada (cada equipo tiene un objetivo distinto).
+const tramosDe = (eq, p) => [...(((OBJ_TRAMOS[eq] || {})[p]) || [])].sort((a, b) => a.desde.localeCompare(b.desde));
+// Objetivo vigente para un equipo y parámetro en una fecha AAAA-MM-DD
+function objetivoEn(eq, p, fecha) {
+  let v = (OBJ_BASE[eq] || {})[p];
+  for (const t of tramosDe(eq, p)) { if (t.desde <= fecha) v = t.valor; else break; }
+  return esNum(v) ? Number(v) : null;
+}
+const objetivoActual = (eq, p) => objetivoEn(eq, p, fechaLocalISO());
+
+// Línea de objetivo: escalonada, con el valor vigente en cada fecha del gráfico
 function datasetObjetivo(param, labels, etiqueta = 'Objetivo') {
   const eq = document.getElementById('filtroEquipo').value;
   if (!eq || !labels.length) return null;
-  const obj = (OBJETIVOS_POR_EQUIPO[eq] || {})[param];
-  if (obj === null || obj === undefined || obj === '' || isNaN(obj)) return null;
-  return { label: etiqueta, data: labels.map(() => obj), borderColor: '#ff7043', backgroundColor: 'transparent', borderDash: [6,4], borderWidth: 2, pointRadius: 0, fill: false };
+  const data = labels.map(f => objetivoEn(eq, param, f));
+  if (data.every(v => v === null)) return null;
+  return { label: etiqueta, data, stepped: 'after', borderColor: '#ff7043', backgroundColor: 'transparent', borderDash: [6,4], borderWidth: 2, pointRadius: 0, fill: false, spanGaps: true };
 }
+
+// Hitos automáticos: cada cambio de objetivo con fecha (solo se dibuja en los gráficos de ese parámetro)
+function hitosDeObjetivos(eq, desde, hasta) {
+  const lista = [];
+  PARAMS_OBJ.forEach(p => {
+    let ant = (OBJ_BASE[eq] || {})[p];
+    tramosDe(eq, p).forEach(t => {
+      if ((!desde || t.desde >= desde) && (!hasta || t.desde <= hasta)) {
+        lista.push({ auto: true, param: p, fecha: t.desde, equipo: eq, sector: '', tipo: 'Cambio de objetivo',
+          descripcion: `Objetivo ${p}: ${esNum(ant) ? fmtObj(ant) : 'sin definir'} → ${fmtObj(t.valor)}`, trabajador: t.usuario_nombre || '', motivo: t.motivo || '' });
+      }
+      ant = t.valor;
+    });
+  });
+  return lista;
+}
+const fmtObj = v => esNum(v) ? String(Number(v)).replace('.', ',') : '—';
 
 function actualizarNotaObjetivos() {
   const eq = document.getElementById('filtroEquipo').value;
   const txt = eq
-    ? `🎯 Línea de objetivo: ${eq}`
+    ? `🎯 Línea de objetivo: ${eq} (escalonada según los cambios registrados)`
     : '🎯 Elegí un Equipo en el filtro de arriba para ver su línea de objetivo (cada equipo tiene la suya).';
   document.querySelectorAll('.objetivo-nota').forEach(el => el.textContent = txt);
 }
@@ -1092,106 +1289,217 @@ function abrirModalObjetivos() {
   const sel = document.getElementById('objetivosEquipo');
   const eqFiltro = document.getElementById('filtroEquipo').value;
   sel.innerHTML = EQUIPOS.map(e => `<option value="${e}"${e === eqFiltro ? ' selected' : ''}>${e}</option>`).join('');
+  document.getElementById('objetivosMotivo').value = '';
   renderFormObjetivos();
   document.getElementById('objetivosModal').style.display = 'flex';
 }
 
 function renderFormObjetivos() {
   const eq = document.getElementById('objetivosEquipo').value;
-  const obj = OBJETIVOS_POR_EQUIPO[eq] || {};
-  document.getElementById('objetivosForm').innerHTML = PARAMS_OBJ.map(p => `
-    <div class="rangos-row" style="grid-template-columns:90px 1fr;">
-      <div class="rangos-param">${p}</div>
-      <label>Valor objetivo <input type="number" step="any" id="obj_${p}" value="${obj[p] ?? ''}" placeholder="Sin definir"></label>
-    </div>`).join('');
+  const hoy = fechaLocalISO();
+  document.getElementById('objetivosForm').innerHTML = PARAMS_OBJ.map(p => {
+    const tramos = tramosDe(eq, p);
+    const base = (OBJ_BASE[eq] || {})[p];
+    const filas = [`<div>Desde siempre: <b style="color:#fff">${fmtObj(base)}</b></div>`].concat(tramos.map(t =>
+      `<div>Desde ${formatFecha(t.desde)}: <b style="color:#fff">${fmtObj(t.valor)}</b>
+        <span> · ${t.usuario_nombre || '—'}${t.motivo ? ' · ' + t.motivo : ''}</span>
+        <button type="button" title="Quitar este cambio" onclick="quitarTramoObjetivo('${eq}','${p}','${t.desde}')">🗑️ quitar</button></div>`));
+    return `<div class="obj-row">
+      <div class="obj-cab">
+        <div class="rangos-param">${p}</div>
+        <label>Vigente hoy <span class="obj-actual">${fmtObj(objetivoEn(eq, p, hoy))}</span></label>
+        <label>Nuevo valor <input type="number" step="any" id="obj_${p}" placeholder="Sin cambio"></label>
+        <label>Vigente desde <input type="date" id="objDesde_${p}" value="${hoy}"></label>
+      </div>
+      <div class="obj-tramos">${filas.join('')}</div>
+    </div>`;
+  }).join('');
 }
 
 function cerrarModalObjetivos() {
   document.getElementById('objetivosModal').style.display = 'none';
 }
 
+// Guarda en Firestore los tramos de un equipo/parámetro + el valor base y el vigente hoy
+async function persistirObjetivo(eq, p, tramos) {
+  const ref = FB.doc(FB.db, 'configuracion', 'objetivos_goteo');
+  OBJ_TRAMOS[eq] = OBJ_TRAMOS[eq] || {};
+  OBJ_TRAMOS[eq][p] = tramos;
+  const actualEq = Object.fromEntries(PARAMS_OBJ.map(q => [q, objetivoActual(eq, q)]));
+  const payload = { tramos: { [eq]: { [p]: tramos } }, base: { [eq]: { [p]: (OBJ_BASE[eq] || {})[p] ?? null } }, por_equipo: { [eq]: actualEq } };
+  if (!OBJETIVOS_YA_POR_EQUIPO) {
+    // Primera vez con la estructura nueva: se guardan los vigentes de todos los equipos
+    payload.por_equipo = Object.fromEntries(EQUIPOS.map(e => [e, Object.fromEntries(PARAMS_OBJ.map(q => [q, objetivoActual(e, q)]))]));
+    OBJETIVOS_YA_POR_EQUIPO = true;
+  }
+  await FB.setDoc(ref, payload, { merge: true });
+}
+
+async function registrarHistorialObjetivo(datos) {
+  await FB.addDoc(FB.collection(FB.db, 'objetivos_historial'), {
+    ...datos, usuario_uid: ME.uid, usuario_nombre: ME.nombre || '(sin nombre)', fecha: FB.serverTimestamp(),
+  });
+}
+
 async function guardarObjetivos() {
   const eq = document.getElementById('objetivosEquipo').value;
-  const nuevos = {};
-  PARAMS_OBJ.forEach(p => {
+  const motivo = document.getElementById('objetivosMotivo').value.trim();
+  const cambios = [];
+  for (const p of PARAMS_OBJ) {
     const v = document.getElementById(`obj_${p}`).value;
-    nuevos[p] = v === '' ? null : parseFloat(v);
-  });
+    if (v === '') continue;
+    const desde = document.getElementById(`objDesde_${p}`).value;
+    if (!desde) { alert(`${p}: indica desde qué fecha rige el nuevo valor.`); return; }
+    const valor = parseFloat(v);
+    if (isNaN(valor)) { alert(`${p}: el valor no es un número.`); return; }
+    const anterior = objetivoEn(eq, p, desde);
+    if (anterior === valor) continue; // no cambia nada
+    cambios.push({ p, desde, valor, anterior });
+  }
+  if (!cambios.length) { alert('No hay cambios: escribe un nuevo valor en el parámetro que quieras cambiar.'); return; }
+  if (!motivo) { alert('Escribe el motivo del cambio.'); return; }
   try {
-    const ref = FB.doc(FB.db, 'configuracion', 'objetivos_goteo');
-    if (OBJETIVOS_YA_POR_EQUIPO) {
-      // Solo se toca el equipo editado (merge), así dos personas editando equipos distintos no se pisan
-      await FB.setDoc(ref, { por_equipo: { [eq]: nuevos } }, { merge: true });
-    } else {
-      // Primera vez con la estructura nueva: se guardan todos los equipos (reemplaza el formato viejo global)
-      const todo = { ...OBJETIVOS_POR_EQUIPO, [eq]: nuevos };
-      await FB.setDoc(ref, { por_equipo: todo });
-      OBJETIVOS_YA_POR_EQUIPO = true;
+    for (const c of cambios) {
+      const tramos = tramosDe(eq, c.p).filter(t => t.desde !== c.desde); // misma fecha → se reemplaza
+      tramos.push({ desde: c.desde, valor: c.valor, usuario_nombre: ME.nombre || '(sin nombre)', motivo, registrado: new Date().toISOString() });
+      tramos.sort((a, b) => a.desde.localeCompare(b.desde));
+      await persistirObjetivo(eq, c.p, tramos);
+      await registrarHistorialObjetivo({ accion: 'cambio', equipo: eq, parametro: c.p, desde: c.desde, valor_anterior: c.anterior, valor_nuevo: c.valor, motivo });
     }
-    OBJETIVOS_POR_EQUIPO[eq] = nuevos;
     cerrarModalObjetivos();
-    renderGraficos();
+    renderTodo();
   } catch (e) {
     console.error(e);
     alert('No se pudo guardar. Revisá tu conexión e intentá de nuevo.');
   }
 }
 
-function abrirModalRangos() {
-  const cont = document.getElementById('rangosForm');
-  cont.innerHTML = Object.keys(RANGOS).map(p => `
-    <div class="rangos-row">
-      <div class="rangos-param">${nombreParam(p)}</div>
-      <label>Mín <input type="number" step="any" id="r_${p}_min" value="${RANGOS[p].min ?? ''}"></label>
-      <label>Máx <input type="number" step="any" id="r_${p}_max" value="${RANGOS[p].max ?? ''}"></label>
-      <label>Alerta baja <input type="number" step="any" id="r_${p}_alerta_baja" value="${RANGOS[p].alerta_baja ?? ''}"></label>
-      <label>Alerta alta <input type="number" step="any" id="r_${p}_alerta_alta" value="${RANGOS[p].alerta_alta ?? ''}"></label>
-    </div>`).join('');
+async function quitarTramoObjetivo(eq, p, desde) {
+  const motivo = document.getElementById('objetivosMotivo').value.trim();
+  if (!motivo) { alert('Para quitar un cambio, primero escribe el motivo en "Motivo del cambio" (abajo).'); return; }
+  const t = tramosDe(eq, p).find(x => x.desde === desde);
+  if (!t || !confirm(`¿Quitar el cambio de ${p} del ${formatFecha(desde)} (valor ${fmtObj(t.valor)})?`)) return;
+  try {
+    await persistirObjetivo(eq, p, tramosDe(eq, p).filter(x => x.desde !== desde));
+    await registrarHistorialObjetivo({ accion: 'quitar', equipo: eq, parametro: p, desde, valor_anterior: t.valor, valor_nuevo: null, motivo });
+    renderFormObjetivos();
+    renderTodo();
+  } catch (e) {
+    console.error(e);
+    alert('No se pudo quitar. Revisá tu conexión e intentá de nuevo.');
+  }
+}
+
+function opcionesEquipoRangos(sel, actual) {
+  sel.innerHTML = '<option value="">General (todos los equipos)</option>' +
+    EQUIPOS.map(e => `<option value="${e}"${e === actual ? ' selected' : ''}>${e} · ${cultivoDe(e)}</option>`).join('');
+}
+function opcionesTipoRangos(sel, actual) {
+  sel.innerHTML = TIPOS_RANGO.map(t => `<option value="${t}"${t === actual ? ' selected' : ''}>${NOMBRE_TIPO[t]}</option>`).join('');
+}
+
+// desdeTabla = true → abre con el equipo/tipo que se está mirando en la tabla de rangos
+function abrirModalRangos(desdeTabla) {
+  const eq = desdeTabla ? document.getElementById('tablaRangosEquipo').value : '';
+  const tipo = desdeTabla ? document.getElementById('tablaRangosTipo').value : 'Goteo';
+  opcionesEquipoRangos(document.getElementById('rangosEquipo'), eq);
+  opcionesTipoRangos(document.getElementById('rangosTipo'), tipo);
+  renderFormRangos();
   document.getElementById('rangosMotivo').value = 'asesoria';
   document.getElementById('rangosMotivoDetalle').value = '';
   document.getElementById('rangosModal').style.display = 'flex';
+}
+
+function renderFormRangos() {
+  const eq = document.getElementById('rangosEquipo').value;
+  const tipo = document.getElementById('rangosTipo').value;
+  document.getElementById('rangosTipoWrap').style.display = eq ? '' : 'none';
+  const params = eq ? paramsDeTipo(tipo) : Object.keys(RANGOS);
+  document.getElementById('rangosAyuda').textContent = eq
+    ? `Rangos de ${NOMBRE_TIPO[tipo]} para ${eq}. Si dejas un parámetro igual al general, sigue usando el general.`
+    : 'Rango general: se usa para todos los equipos y tipos que no tengan un rango propio.';
+  const f = v => v ?? '';
+  document.getElementById('rangosForm').innerHTML = params.map(p => {
+    const r = eq ? rangoPara(p, tipo, eq) : RANGOS[p];
+    const propio = eq && rangoPropio(p, tipo, eq);
+    const etiqueta = eq ? `<div style="font-size:10px;font-weight:600;color:${propio ? 'var(--warn)' : '#8fa3b3'}">${propio ? 'propio' : 'general'}</div>` : '';
+    const reset = propio ? `<button type="button" onclick="usarGeneralEnForm('${p}')" style="background:none;border:none;color:#42a5f5;font-size:10px;cursor:pointer;padding:0;text-align:left;">↺ usar general</button>` : '';
+    return `<div class="rangos-row">
+      <div class="rangos-param">${nombreParam(p)}${etiqueta}${reset}</div>
+      <label>Mín <input type="number" step="any" id="r_${p}_min" value="${f(r.min)}"></label>
+      <label>Máx <input type="number" step="any" id="r_${p}_max" value="${f(r.max)}"></label>
+      <label>Alerta baja <input type="number" step="any" id="r_${p}_alerta_baja" value="${f(r.alerta_baja)}"></label>
+      <label>Alerta alta <input type="number" step="any" id="r_${p}_alerta_alta" value="${f(r.alerta_alta)}"></label>
+    </div>`;
+  }).join('');
+}
+
+function usarGeneralEnForm(p) {
+  const g = RANGOS[p] || {};
+  ['min','max','alerta_baja','alerta_alta'].forEach(c => { document.getElementById(`r_${p}_${c}`).value = g[c] ?? ''; });
 }
 
 function cerrarModalRangos() {
   document.getElementById('rangosModal').style.display = 'none';
 }
 
+const CAMPOS_RANGO = ['min','max','alerta_baja','alerta_alta'];
+const mismoRango = (a, b) => CAMPOS_RANGO.every(c => (a?.[c] ?? null) === (b?.[c] ?? null));
+
 async function guardarRangos() {
+  const eq = document.getElementById('rangosEquipo').value;
+  const tipo = document.getElementById('rangosTipo').value;
+  const params = eq ? paramsDeTipo(tipo) : Object.keys(RANGOS);
+
+  // Leer y validar (antes se podía guardar un Mín/Máx vacío sin aviso)
   const nuevos = {};
+  const errores = [];
+  params.forEach(p => {
+    const leer = c => { const x = document.getElementById(`r_${p}_${c}`).value; return x === '' ? null : parseFloat(x); };
+    const nv = { min: leer('min'), max: leer('max'), alerta_baja: leer('alerta_baja'), alerta_alta: leer('alerta_alta') };
+    const n = nombreParam(p);
+    if (nv.min === null || nv.max === null) errores.push(`${n}: Mín y Máx son obligatorios.`);
+    else if (nv.min > nv.max) errores.push(`${n}: el Mín no puede ser mayor que el Máx.`);
+    if (nv.alerta_baja !== null && nv.min !== null && nv.alerta_baja > nv.min) errores.push(`${n}: la Alerta baja debe ser menor o igual al Mín.`);
+    if (nv.alerta_alta !== null && nv.max !== null && nv.alerta_alta < nv.max) errores.push(`${n}: la Alerta alta debe ser mayor o igual al Máx.`);
+    nuevos[p] = nv;
+  });
+  if (errores.length) { alert('Revisá estos valores:\n\n• ' + errores.join('\n• ')); return; }
+
+  // Cambios respecto de lo que se usaba antes
   const cambios = [];
-  Object.keys(RANGOS).forEach(p => {
-    const min = parseFloat(document.getElementById(`r_${p}_min`).value);
-    const max = parseFloat(document.getElementById(`r_${p}_max`).value);
-    const ab  = document.getElementById(`r_${p}_alerta_baja`).value;
-    const aa  = document.getElementById(`r_${p}_alerta_alta`).value;
-    nuevos[p] = {
-      min, max,
-      alerta_baja: ab === '' ? null : parseFloat(ab),
-      alerta_alta: aa === '' ? null : parseFloat(aa),
-    };
-    ['min','max','alerta_baja','alerta_alta'].forEach(campo => {
-      const antes = RANGOS[p][campo];
-      const despues = nuevos[p][campo];
-      if (antes !== despues) {
-        cambios.push({ parametro: p, campo, valor_anterior: antes ?? null, valor_nuevo: despues ?? null });
-      }
+  params.forEach(p => {
+    const antes = eq ? rangoPara(p, tipo, eq) : RANGOS[p];
+    CAMPOS_RANGO.forEach(campo => {
+      const a = antes?.[campo] ?? null, d = nuevos[p][campo] ?? null;
+      if (a !== d) cambios.push({ parametro: p, campo, valor_anterior: a, valor_nuevo: d });
     });
   });
 
   const motivo = document.getElementById('rangosMotivo').value;
   const detalle = document.getElementById('rangosMotivoDetalle').value.trim();
-
   if (!cambios.length) { cerrarModalRangos(); return; }
-  if (motivo === 'otro' && !detalle) {
-    alert('Contá brevemente el motivo del cambio.');
-    return;
-  }
+  if (motivo === 'otro' && !detalle) { alert('Contá brevemente el motivo del cambio.'); return; }
 
   try {
-    await FB.setDoc(FB.doc(FB.db, 'configuracion', 'rangos_referencia'), { valores: nuevos });
+    const ref = FB.doc(FB.db, 'configuracion', 'rangos_referencia');
+    if (!eq) {
+      // merge: true para no borrar las excepciones por equipo
+      await FB.setDoc(ref, { valores: { ...RANGOS, ...nuevos } }, { merge: true });
+      RANGOS = { ...RANGOS, ...nuevos };
+    } else {
+      // Solo se guarda como propio lo que difiere del general; lo demás queda en null (= usa el general)
+      const excepciones = {};
+      params.forEach(p => { excepciones[p] = mismoRango(nuevos[p], RANGOS[p]) ? null : nuevos[p]; });
+      await FB.setDoc(ref, { por_equipo: { [eq]: { [tipo]: excepciones } } }, { merge: true });
+      RANGOS_EQUIPO[eq] = RANGOS_EQUIPO[eq] || {};
+      RANGOS_EQUIPO[eq][tipo] = { ...(RANGOS_EQUIPO[eq][tipo] || {}), ...excepciones };
+    }
     for (const c of cambios) {
       await FB.addDoc(FB.collection(FB.db, 'rangos_historial'), {
         ...c,
+        equipo: eq || 'General',
+        tipo: eq ? tipo : null,
         motivo,
         motivo_detalle: detalle || null,
         usuario_uid: ME.uid,
@@ -1199,7 +1507,6 @@ async function guardarRangos() {
         fecha: FB.serverTimestamp(),
       });
     }
-    RANGOS = nuevos;
     cerrarModalRangos();
     renderTodo();
     alert('Rangos actualizados.');
@@ -1225,7 +1532,8 @@ async function abrirHistorialRangos() {
       const h = d.data();
       const f = h.fecha && h.fecha.toDate ? h.fecha.toDate().toLocaleString('es-CL') : '—';
       return `<div class="hist-row">
-        <div><b>${h.parametro}</b> · ${h.campo}: ${h.valor_anterior ?? '—'} → ${h.valor_nuevo ?? '—'}</div>
+        <div><b>${nombreParam(h.parametro)}</b> · ${h.campo}: ${h.valor_anterior ?? '—'} → ${h.valor_nuevo ?? '—'}</div>
+        <div class="hist-meta">Aplica a: ${h.equipo && h.equipo !== 'General' ? `${h.equipo} · ${NOMBRE_TIPO[h.tipo] || h.tipo || ''}` : 'General'}</div>
         <div class="hist-meta">${motivoTexto[h.motivo] || h.motivo}${h.motivo_detalle ? ' — ' + h.motivo_detalle : ''}</div>
         <div class="hist-meta">${h.usuario_nombre || '—'} · ${f}</div>
       </div>`;
@@ -1241,19 +1549,21 @@ function cerrarModalHistorial() {
 }
 
 
-function getEstado(param, valor) {
-  const r = RANGOS[param];
+// Estado de un valor según el rango que le corresponde (el del equipo y tipo si existe, si no el general).
+// Antes "if (r.alerta_baja && ...)" ignoraba un límite en 0; ahora se revisa que sea número.
+function getEstado(param, valor, tipo, equipo) {
+  const r = rangoPara(param, tipo, equipo);
   if (!r || valor === '' || valor === null || valor === undefined) return null;
   const v = parseFloat(valor);
   if (isNaN(v)) return null;
-  if (r.alerta_baja && v < r.alerta_baja) return 'danger';
-  if (r.alerta_alta && v > r.alerta_alta) return 'danger';
-  if (v < r.min || v > r.max) return 'warn';
+  if (esNum(r.alerta_baja) && v < r.alerta_baja) return 'danger';
+  if (esNum(r.alerta_alta) && v > r.alerta_alta) return 'danger';
+  if ((esNum(r.min) && v < r.min) || (esNum(r.max) && v > r.max)) return 'warn';
   return 'ok';
 }
 
-function semItem(param, valor) {
-  const estado = getEstado(param, valor);
+function semItem(param, valor, reg) {
+  const estado = getEstado(param, valor, reg && reg.tipo, reg && reg.equipo);
   const v = valor !== '' && valor !== null && valor !== undefined ? fmtComma(parseFloat(valor)) : '—';
   const badge = estado ? `<div class="sem-badge badge-${estado}">${estado === 'ok' ? '✓ OK' : estado === 'warn' ? '⚠ ALERTA' : '✕ FUERA'}</div>` : '';
   return `<div class="sem-item">
@@ -1273,13 +1583,13 @@ function humItem(nombre, valor) {
 
 // ── MENSAJE DE BIENVENIDA (saludo + fecha + resumen de alertas del día) ────
 function contarAlertasHoy() {
-  const hoy = new Date().toISOString().split('T')[0];
+  const hoy = fechaLocalISO();
   const params = ['pH','CE','Nitratos','Potasio','Calcio','Sodio','PorcentajeDrenaje'];
   const conteo = { Goteo: 0, Drenaje: 0, PorcentajeDrenaje: 0, Lisimetro: 0 };
   filtrarResumen(DATOS).filter(r => r.fecha === hoy && r.tipo !== 'Humedad').forEach(r => {
     params.forEach(p => {
       if (r[p] === undefined || r[p] === '' || r[p] === null) return;
-      const estado = getEstado(p, r[p]);
+      const estado = getEstado(p, r[p], r.tipo, r.equipo);
       if ((estado === 'danger' || estado === 'warn') && conteo[r.tipo] !== undefined) conteo[r.tipo]++;
     });
   });
@@ -1290,7 +1600,7 @@ function renderBienvenida() {
   const hora = new Date().getHours();
   const saludo = hora < 12 ? 'Buenos días' : hora < 19 ? 'Buenas tardes' : 'Buenas noches';
   const nombre = (ME.nombre || '').split(' ')[0];
-  const hoyStr = formatFecha(new Date().toISOString().split('T')[0]);
+  const hoyStr = formatFecha(fechaLocalISO());
 
   document.getElementById('bienvenidaSaludo').textContent = `${saludo}${nombre ? ', ' + nombre : ''} 👋`;
   document.getElementById('bienvenidaFecha').textContent = `Hoy es ${hoyStr}` +
@@ -1319,13 +1629,26 @@ function renderBienvenida() {
   }
 }
 
+// El registro más reciente de una lista: mayor fecha y, dentro del mismo día, mayor hora de creación.
+// (Antes se tomaba el último de la lista, pero Firestore no entrega los documentos ordenados por fecha.)
+function masReciente(lista) {
+  return lista.reduce((mejor, r) => {
+    if (!mejor) return r;
+    const f = (r.fecha || '').localeCompare(mejor.fecha || '');
+    if (f > 0) return r;
+    if (f === 0 && (r.creadoMs || 0) > (mejor.creadoMs || 0)) return r;
+    return mejor;
+  }, null);
+}
+
 function renderSemaforos() {
   const params = ['pH','CE','Nitratos','Potasio','Calcio','Sodio'];
-  const ultGoteo   = filtrarResumen(FILTRADOS).filter(r => r.tipo === 'Goteo').slice(-1)[0];
-  const ultDrenaje = filtrarResumen(FILTRADOS).filter(r => r.tipo === 'Drenaje').slice(-1)[0];
-  const ultHumedad = filtrarResumen(FILTRADOS).filter(r => r.tipo === 'Humedad').slice(-1)[0];
-  const ultPctDrenaje = filtrarResumen(FILTRADOS).filter(r => r.tipo === 'PorcentajeDrenaje').slice(-1)[0];
-  const ultLisimetro = filtrarResumen(FILTRADOS).filter(r => r.tipo === 'Lisimetro').slice(-1)[0];
+  const datosRes = filtrarResumen(FILTRADOS);
+  const ultGoteo      = masReciente(datosRes.filter(r => r.tipo === 'Goteo'));
+  const ultDrenaje    = masReciente(datosRes.filter(r => r.tipo === 'Drenaje'));
+  const ultHumedad    = masReciente(datosRes.filter(r => r.tipo === 'Humedad'));
+  const ultPctDrenaje = masReciente(datosRes.filter(r => r.tipo === 'PorcentajeDrenaje'));
+  const ultLisimetro  = masReciente(datosRes.filter(r => r.tipo === 'Lisimetro'));
 
   const fmtFechaHora = r => r.hora ? `Último registro: ${formatFecha(r.fecha)} · ${r.hora}` : `Último registro: ${formatFecha(r.fecha)}`;
   document.getElementById('fechaGoteo').textContent = ultGoteo ? fmtFechaHora(ultGoteo) : '';
@@ -1335,11 +1658,11 @@ function renderSemaforos() {
   document.getElementById('fechaLisimetro').textContent = ultLisimetro ? fmtFechaHora(ultLisimetro) : '';
 
   document.getElementById('semaforoGoteo').innerHTML = ultGoteo
-    ? params.map(p => semItem(p, ultGoteo[p])).join('')
+    ? params.map(p => semItem(p, ultGoteo[p], ultGoteo)).join('')
     : '<div class="empty">Sin registros de Goteo</div>';
 
   document.getElementById('semaforoDrenaje').innerHTML = ultDrenaje
-    ? params.map(p => semItem(p, ultDrenaje[p])).join('')
+    ? params.map(p => semItem(p, ultDrenaje[p], ultDrenaje)).join('')
     : '<div class="empty">Sin registros de Drenaje</div>';
 
   document.getElementById('semaforoHumedad').innerHTML = ultHumedad
@@ -1351,12 +1674,25 @@ function renderSemaforos() {
       ].join('')
     : '<div class="empty">Sin registros de Humedad</div>';
 
-  document.getElementById('semaforoPctDrenaje').innerHTML = ultPctDrenaje
-    ? semItem('PorcentajeDrenaje', ultPctDrenaje.PorcentajeDrenaje)
-    : '<div class="empty">Sin registros de % Drenaje</div>';
+  if (ultPctDrenaje) {
+    // Todos los riegos de ese día y sector → % del día (ponderado por volumen)
+    const delDia = datosRes.filter(r => r.tipo === 'PorcentajeDrenaje' && r.fecha === ultPctDrenaje.fecha && r.equipo === ultPctDrenaje.equipo && r.sector === ultPctDrenaje.sector);
+    const pDia = pctPonderado(delDia);
+    const conVol = delDia.filter(tieneVol);
+    let html = semItem('PorcentajeDrenaje', pDia, ultPctDrenaje);
+    if (conVol.length) {
+      html += humItem('Riegos', conVol.length);
+      html += humItem('Goteo (ml)', conVol.reduce((a, r) => a + Number(r.vol_goteo_ml), 0).toLocaleString('es-CL'));
+      html += humItem('Drenaje (ml)', conVol.reduce((a, r) => a + Number(r.vol_drenaje_ml), 0).toLocaleString('es-CL'));
+    }
+    document.getElementById('semaforoPctDrenaje').innerHTML = html;
+    document.getElementById('fechaPctDrenaje').textContent += ` · ${ultPctDrenaje.sector || ''}`;
+  } else {
+    document.getElementById('semaforoPctDrenaje').innerHTML = '<div class="empty">Sin registros de % Drenaje</div>';
+  }
 
   document.getElementById('semaforoLisimetro').innerHTML = ultLisimetro
-    ? params.map(p => semItem(p, ultLisimetro[p])).join('')
+    ? params.map(p => semItem(p, ultLisimetro[p], ultLisimetro)).join('')
     : '<div class="empty">Sin registros de Lisímetro</div>';
 }
 
@@ -1364,14 +1700,26 @@ function renderSemaforos() {
 function renderTablaRangos() {
   const tbody = document.getElementById('tablaRangos');
   if (!tbody) return;
-  const fmt = v => (v === null || v === undefined || v === '' ) ? '—' : v;
-  tbody.innerHTML = Object.keys(RANGOS).map(p => {
-    const r = RANGOS[p];
+  const selEq = document.getElementById('tablaRangosEquipo');
+  const selTipo = document.getElementById('tablaRangosTipo');
+  if (!selEq.options.length) { opcionesEquipoRangos(selEq, ''); opcionesTipoRangos(selTipo, 'Goteo'); }
+  const eq = selEq.value, tipo = selTipo.value;
+  document.getElementById('tablaRangosTipoWrap').style.display = eq ? '' : 'none';
+  const params = eq ? paramsDeTipo(tipo) : Object.keys(RANGOS);
+  const nPropios = eq ? params.filter(p => rangoPropio(p, tipo, eq)).length : 0;
+  document.getElementById('tablaRangosAyuda').textContent = eq
+    ? `${eq} · ${NOMBRE_TIPO[tipo]}: ${nPropios ? nPropios + ' parámetro(s) con rango propio, el resto usa el general.' : 'usa el rango general en todos los parámetros.'}`
+    : 'Rango general (se aplica a todos los equipos y tipos que no tengan rango propio).';
+  const fmt = v => esNum(v) ? fmtComma(Number(v), Number.isInteger(Number(v)) ? 0 : 2) : '—';
+  tbody.innerHTML = params.map(p => {
+    const r = eq ? rangoPara(p, tipo, eq) : RANGOS[p];
+    const propio = eq && rangoPropio(p, tipo, eq);
     return `<tr>
       <td>${nombreParam(p)}</td>
       <td>${fmt(r.min)} — ${fmt(r.max)}</td>
-      <td style="color:var(--warn)">${r.alerta_baja !== null && r.alerta_baja !== undefined ? '&lt; ' + r.alerta_baja : '—'}</td>
-      <td style="color:var(--danger)">${r.alerta_alta !== null && r.alerta_alta !== undefined ? '&gt; ' + r.alerta_alta : '—'}</td>
+      <td style="color:var(--warn)">${esNum(r.alerta_baja) ? '&lt; ' + fmt(r.alerta_baja) : '—'}</td>
+      <td style="color:var(--danger)">${esNum(r.alerta_alta) ? '&gt; ' + fmt(r.alerta_alta) : '—'}</td>
+      <td>${propio ? '<span class="badge badge-humedad">Propio</span>' : '<span style="color:var(--muted);font-size:12px;">General</span>'}</td>
     </tr>`;
   }).join('');
 }
@@ -1448,23 +1796,34 @@ function renderTabla() {
     if (a.tipo === 'Humedad') {
       return (a.hilera || 0) - (b.hilera || 0);
     }
+    if (a.tipo === 'PorcentajeDrenaje' && (a.riego || b.riego)) {
+      return (a.riego || 0) - (b.riego || 0);
+    }
     return (a.hora || '').localeCompare(b.hora || ''); // más antiguo primero dentro del sector
   });
 
   if (tipoSel === 'Humedad') {
-    thead.innerHTML = `<tr><th>Fecha</th><th>Hora</th><th>Trabajador</th><th>Equipo</th><th>Sector</th><th>Hilera</th><th>H. Inicial</th><th>H. Media</th><th>H. Final</th></tr>`;
+    thead.innerHTML = `<tr><th>Fecha</th><th>Hora</th><th>Trabajador</th><th>Equipo</th><th>Sector</th><th>Hilera</th><th>H. Inicial</th><th>H. Media</th><th>H. Final</th><th>Acciones</th></tr>`;
   } else if (tipoSel === 'Goteo' || tipoSel === 'Drenaje' || tipoSel === 'Lisimetro') {
-    thead.innerHTML = `<tr><th>Fecha</th><th>Hora</th><th>Trabajador</th><th>Equipo</th><th>Sector</th><th>pH</th><th>CE</th><th>Nitratos</th><th>Potasio</th><th>Calcio</th><th>Sodio</th></tr>`;
+    thead.innerHTML = `<tr><th>Fecha</th><th>Hora</th><th>Trabajador</th><th>Equipo</th><th>Sector</th><th>pH</th><th>CE</th><th>Nitratos</th><th>Potasio</th><th>Calcio</th><th>Sodio</th><th>Acciones</th></tr>`;
   } else if (tipoSel === 'PorcentajeDrenaje') {
-    thead.innerHTML = `<tr><th>Fecha</th><th>Hora</th><th>Trabajador</th><th>Equipo</th><th>Sector</th><th>% Drenaje</th></tr>`;
+    thead.innerHTML = `<tr><th>Fecha</th><th>Hora</th><th>Trabajador</th><th>Equipo</th><th>Sector</th><th>Riego</th><th>Vol. goteo (ml)</th><th>Vol. drenaje (ml)</th><th>% Drenaje</th><th>Acciones</th></tr>`;
   } else {
-    thead.innerHTML = `<tr><th>Tipo</th><th>Fecha</th><th>Hora</th><th>Trabajador</th><th>Equipo</th><th>Sector</th><th>pH / Hilera</th><th>CE / H.Inicial</th><th>Nitratos / H.Media</th><th>Potasio / H.Final</th><th>Calcio</th><th>Sodio</th><th>% Drenaje</th></tr>`;
+    thead.innerHTML = `<tr><th>Tipo</th><th>Fecha</th><th>Hora</th><th>Trabajador</th><th>Equipo</th><th>Sector</th><th>pH / Hilera</th><th>CE / H.Inicial</th><th>Nitratos / H.Media</th><th>Potasio / H.Final</th><th>Calcio</th><th>Sodio</th><th>% Drenaje</th><th>Acciones</th></tr>`;
   }
 
   if (!registros.length) {
-    tbody.innerHTML = `<tr><td colspan="13" class="empty">Sin registros</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="14" class="empty">Sin registros</td></tr>`;
+    renderTablaHitos();
     return;
   }
+
+  const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+  const celdaHito = r => celdaAcciones(r);
+  const fmtMl = v => esNum(v) ? Number(v).toLocaleString('es-CL') : '—';
+  // % Drenaje en la vista "Todos": el % y, si existe, el detalle del riego debajo
+  const celdaPct = r => fmtVal(r.PorcentajeDrenaje,'PorcentajeDrenaje',r) +
+    (tieneVol(r) ? `<span class="vol-sub">R${r.riego || '?'} · ${fmtMl(r.vol_drenaje_ml)}/${fmtMl(r.vol_goteo_ml)} ml</span>` : '');
 
   tbody.innerHTML = registros.map(r => {
     const tipo = r.tipo || '—';
@@ -1482,6 +1841,7 @@ function renderTabla() {
         <td>${r.humedad_inicial ?? '—'}</td>
         <td>${r.humedad_media ?? '—'}</td>
         <td>${r.humedad_final ?? '—'}</td>
+        ${celdaHito(r)}
       </tr>`;
     }
     if (tipoSel === 'Goteo' || tipoSel === 'Drenaje' || tipoSel === 'Lisimetro') {
@@ -1491,12 +1851,13 @@ function renderTabla() {
         <td>${(r.trabajador || '—').split(' ')[0]}</td>
         <td>${r.equipo || '—'}</td>
         <td>${r.sector || '—'}</td>
-        <td>${fmtVal(r.pH,'pH')}</td>
-        <td>${fmtVal(r.CE,'CE')}</td>
-        <td>${fmtVal(r.Nitratos,'Nitratos')}</td>
-        <td>${fmtVal(r.Potasio,'Potasio')}</td>
-        <td>${fmtVal(r.Calcio,'Calcio')}</td>
-        <td>${fmtVal(r.Sodio,'Sodio')}</td>
+        <td>${fmtVal(r.pH,'pH',r)}</td>
+        <td>${fmtVal(r.CE,'CE',r)}</td>
+        <td>${fmtVal(r.Nitratos,'Nitratos',r)}</td>
+        <td>${fmtVal(r.Potasio,'Potasio',r)}</td>
+        <td>${fmtVal(r.Calcio,'Calcio',r)}</td>
+        <td>${fmtVal(r.Sodio,'Sodio',r)}</td>
+        ${celdaHito(r)}
       </tr>`;
     }
     if (tipoSel === 'PorcentajeDrenaje') {
@@ -1506,7 +1867,11 @@ function renderTabla() {
         <td>${(r.trabajador || '—').split(' ')[0]}</td>
         <td>${r.equipo || '—'}</td>
         <td>${r.sector || '—'}</td>
-        <td>${fmtVal(r.PorcentajeDrenaje,'PorcentajeDrenaje')}</td>
+        <td>${r.riego ?? '—'}</td>
+        <td>${fmtMl(r.vol_goteo_ml)}</td>
+        <td>${fmtMl(r.vol_drenaje_ml)}</td>
+        <td>${fmtVal(r.PorcentajeDrenaje,'PorcentajeDrenaje',r)}</td>
+        ${celdaHito(r)}
       </tr>`;
     }
     // Vista "Todos" (ninguno o varios tipos seleccionados a la vez)
@@ -1519,15 +1884,351 @@ function renderTabla() {
       <td>${(r.trabajador || '—').split(' ')[0]}</td>
       <td>${r.equipo || '—'}</td>
       <td>${r.sector || '—'}</td>
-      <td>${isHumedad ? (r.hilera ?? '—') : isPctDrenaje ? '—' : fmtVal(r.pH,'pH')}</td>
-      <td>${isHumedad ? (r.humedad_inicial ?? '—') : isPctDrenaje ? '—' : fmtVal(r.CE,'CE')}</td>
-      <td>${isHumedad ? (r.humedad_media ?? '—') : isPctDrenaje ? '—' : fmtVal(r.Nitratos,'Nitratos')}</td>
-      <td>${isHumedad ? (r.humedad_final ?? '—') : isPctDrenaje ? '—' : fmtVal(r.Potasio,'Potasio')}</td>
-      <td>${(isHumedad || isPctDrenaje) ? '—' : fmtVal(r.Calcio,'Calcio')}</td>
-      <td>${(isHumedad || isPctDrenaje) ? '—' : fmtVal(r.Sodio,'Sodio')}</td>
-      <td>${isPctDrenaje ? fmtVal(r.PorcentajeDrenaje,'PorcentajeDrenaje') : '—'}</td>
+      <td>${isHumedad ? (r.hilera ?? '—') : isPctDrenaje ? '—' : fmtVal(r.pH,'pH',r)}</td>
+      <td>${isHumedad ? (r.humedad_inicial ?? '—') : isPctDrenaje ? '—' : fmtVal(r.CE,'CE',r)}</td>
+      <td>${isHumedad ? (r.humedad_media ?? '—') : isPctDrenaje ? '—' : fmtVal(r.Nitratos,'Nitratos',r)}</td>
+      <td>${isHumedad ? (r.humedad_final ?? '—') : isPctDrenaje ? '—' : fmtVal(r.Potasio,'Potasio',r)}</td>
+      <td>${(isHumedad || isPctDrenaje) ? '—' : fmtVal(r.Calcio,'Calcio',r)}</td>
+      <td>${(isHumedad || isPctDrenaje) ? '—' : fmtVal(r.Sodio,'Sodio',r)}</td>
+      <td>${isPctDrenaje ? celdaPct(r) : '—'}</td>
+      ${celdaHito(r)}
     </tr>`;
   }).join('');
+  renderTablaHitos();
+}
+
+// ── EDITAR / ELIMINAR / RESTAURAR REGISTROS ───────────────────────────────────
+// Cualquier usuario con acceso puede hacerlo. Siempre con motivo, y todo queda en "mediciones_historial".
+// Eliminar NO borra el documento: lo marca (anulado: true) y deja de verse en el dashboard; se puede restaurar.
+const escH = t => String(t ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const regPorId = id => DATOS.find(r => r.id === id) || HITOS_DATOS.find(r => r.id === id) || ANULADOS.find(r => r.id === id);
+const LIMITES_MED = { pH: [0, 14], CE: [0, 20], Nitratos: [0, 2000], Potasio: [0, 2000], Calcio: [0, 2000], Sodio: [0, 2000] };
+const NOMBRE_CAMPO = { fecha: 'Fecha', equipo: 'Equipo', sector: 'Sector', observacion: 'Observación', hilera: 'Hilera',
+  humedad_inicial: 'H. Inicial', humedad_media: 'H. Media', humedad_final: 'H. Final', riego: 'Riego',
+  vol_goteo_ml: 'Vol. goteo (ml)', vol_drenaje_ml: 'Vol. drenaje (ml)', PorcentajeDrenaje: '% Drenaje',
+  hito_tipo: 'Tipo de hito', hito_descripcion: 'Descripción', anulado: 'Eliminado' };
+const nombreCampo = c => NOMBRE_CAMPO[c] || c;
+const etiquetaTipoReg = t => t === 'Hito' ? '📌 Hito' : (NOMBRE_TIPO[t] || t);
+
+function celdaAcciones(r) {
+  return `<td style="white-space:nowrap;">
+    <button class="acc-btn" title="Editar" onclick="abrirEditar('${r.id}')">✏️</button><button class="acc-btn" title="Eliminar" onclick="abrirEliminar('${r.id}')">🗑️</button>
+    ${r.editado ? `<br><span class="chip-editado" title="Ver historial de cambios" onclick="abrirHistorialRegistro('${r.id}')">✏️ Editado</span>` : ''}
+  </td>`;
+}
+
+function resumenRegistro(r) {
+  let val = '';
+  if (['Goteo', 'Drenaje', 'Lisimetro'].includes(r.tipo)) val = PARAMS_OBJ.filter(p => esNum(r[p])).map(p => `${p} ${fmtComma(Number(r[p]))}`).join(' · ');
+  else if (r.tipo === 'Humedad') val = `Hilera ${r.hilera ?? '—'} · ${r.humedad_inicial ?? '—'} / ${r.humedad_media ?? '—'} / ${r.humedad_final ?? '—'}`;
+  else if (r.tipo === 'PorcentajeDrenaje') val = (tieneVol(r) ? `Riego ${r.riego || '?'} · ${r.vol_drenaje_ml} / ${r.vol_goteo_ml} ml · ` : '') + `${esNum(r.PorcentajeDrenaje) ? fmtComma(Number(r.PorcentajeDrenaje), 1) : '—'} %`;
+  else if (r.tipo === 'Hito') val = `${r.hito_tipo || ''}${r.hito_descripcion ? ' — ' + r.hito_descripcion : ''}`;
+  return `<b>${etiquetaTipoReg(r.tipo)}</b> · ${formatFecha(r.fecha)} · ${escH(r.equipo || '—')} · ${escH(r.sector || '—')}
+    <br><span style="color:#8fa3b3">${escH(val) || '—'}</span>
+    <br><span style="color:#8fa3b3;font-size:11px;">Registrado por ${escH(r.trabajador || '—')}${r.hora ? ' · ' + r.hora : ''}</span>`;
+}
+
+// Modal genérico
+function abrirRegModal(titulo, cuerpo, botones) {
+  document.getElementById('regModalTitulo').textContent = titulo;
+  document.getElementById('regModalCuerpo').innerHTML = cuerpo;
+  document.getElementById('regModalError').textContent = '';
+  document.getElementById('regModalBotones').innerHTML = botones +
+    `<button class="graf-btn" onclick="cerrarRegModal()">${botones ? 'Cancelar' : 'Cerrar'}</button>`;
+  document.getElementById('regModal').style.display = 'flex';
+}
+function cerrarRegModal() { document.getElementById('regModal').style.display = 'none'; }
+function errorRegModal(msg) { document.getElementById('regModalError').textContent = msg; }
+const campoMotivo = (ph) => `<div class="reg-campo-full" style="margin-top:12px;"><label>Motivo (obligatorio)
+  <textarea id="regMotivo" class="input-modal" rows="2" maxlength="200" placeholder="${ph}"></textarea></label></div>`;
+
+function opcionesSector(eq, actual) {
+  const lista = [...sectoresDe(eq)];
+  if (actual && !lista.includes(actual)) lista.unshift(actual); // sector antiguo que ya no está en la lista
+  return lista.map(x => `<option${x === actual ? ' selected' : ''}>${escH(x)}</option>`).join('');
+}
+function cambioEquipoEdicion() {
+  const eq = document.getElementById('ed_equipo').value;
+  document.getElementById('ed_sector').innerHTML = opcionesSector(eq, '');
+}
+
+// Campos editables según el tipo de registro
+function camposEdicion(r) {
+  const c = [];
+  if (['Goteo', 'Drenaje', 'Lisimetro'].includes(r.tipo)) PARAMS_OBJ.forEach(p => c.push({ campo: p, min: LIMITES_MED[p][0], max: LIMITES_MED[p][1], opcional: true }));
+  else if (r.tipo === 'Humedad') {
+    c.push({ campo: 'hilera', min: 1, max: 6 });
+    ['humedad_inicial', 'humedad_media', 'humedad_final'].forEach(x => c.push({ campo: x, min: 0, max: 100 }));
+  } else if (r.tipo === 'PorcentajeDrenaje') {
+    if (tieneVol(r)) { c.push({ campo: 'riego', min: 1, max: 6 }); c.push({ campo: 'vol_goteo_ml', min: 0, max: 10000 }); c.push({ campo: 'vol_drenaje_ml', min: 0, max: 10000 }); }
+    else c.push({ campo: 'PorcentajeDrenaje', min: 0, max: 100 });
+  }
+  return c;
+}
+
+function abrirEditar(id) {
+  const r = regPorId(id);
+  if (!r) return;
+  const num = camposEdicion(r).map(f => `<label>${nombreCampo(f.campo)}${f.opcional ? '' : ' *'}
+      <input class="input-modal" type="number" step="any" id="ed_${f.campo}" value="${esNum(r[f.campo]) ? Number(r[f.campo]) : ''}" ${r.tipo === 'PorcentajeDrenaje' && tieneVol(r) ? 'oninput="previewPctEdicion()"' : ''}></label>`).join('');
+  const esHito = r.tipo === 'Hito';
+  const cuerpo = `<div class="reg-resumen">${resumenRegistro(r)}</div>
+    <div class="reg-campos">
+      <label>Fecha <input class="input-modal" type="date" id="ed_fecha" value="${r.fecha || ''}"></label>
+      <label>Equipo <select class="input-modal" id="ed_equipo" onchange="cambioEquipoEdicion()">${EQUIPOS.map(e => `<option${e === r.equipo ? ' selected' : ''}>${e}</option>`).join('')}${r.equipo && !EQUIPOS.includes(r.equipo) ? `<option selected>${escH(r.equipo)}</option>` : ''}</select></label>
+      <label>Sector <select class="input-modal" id="ed_sector">${opcionesSector(r.equipo, r.sector)}</select></label>
+      ${esHito ? `<label>Tipo de hito <select class="input-modal" id="ed_hito_tipo">${TIPOS_HITO.map(t => `<option value="${t}"${t === r.hito_tipo ? ' selected' : ''}>${hitoIcon(t)} ${t}</option>`).join('')}</select></label>
+        <div class="reg-campo-full"><label>Descripción <textarea class="input-modal" id="ed_hito_descripcion" rows="2" maxlength="200">${escH(r.hito_descripcion || '')}</textarea></label></div>` : num}
+      ${r.tipo === 'PorcentajeDrenaje' && tieneVol(r) ? '<div class="reg-campo-full" id="edPctPreview" style="color:#90caf9;font-size:13px;font-weight:700;"></div>' : ''}
+      ${esHito ? '' : `<div class="reg-campo-full"><label>Observación <input class="input-modal" type="text" id="ed_observacion" maxlength="300" value="${escH(r.observacion || '')}"></label></div>`}
+    </div>
+    ${campoMotivo('Ej: error de tipeo, CE 16 en vez de 1,6')}`;
+  abrirRegModal('✏️ Editar registro', cuerpo, `<button class="graf-btn" style="background:var(--accent);color:var(--bg);" onclick="guardarEdicion('${id}')">Guardar cambios</button>`);
+  if (r.tipo === 'PorcentajeDrenaje' && tieneVol(r)) previewPctEdicion();
+}
+function previewPctEdicion() {
+  const g = parseFloat(document.getElementById('ed_vol_goteo_ml').value), d = parseFloat(document.getElementById('ed_vol_drenaje_ml').value);
+  document.getElementById('edPctPreview').textContent = g > 0 && !isNaN(d) ? `% Drenaje calculado: ${fmtComma(d / g * 100, 1)} %` : '% Drenaje calculado: —';
+}
+
+async function registrarHistorialMedicion(r, accion, cambios, motivo) {
+  await FB.addDoc(FB.collection(FB.db, 'mediciones_historial'), {
+    medicion_id: r.id, tipo_registro: r.tipo, equipo: r.equipo || '', sector: r.sector || '', fecha_registro: r.fecha || '',
+    accion, cambios, motivo, usuario_uid: ME.uid, usuario_nombre: ME.nombre || '(sin nombre)', fecha: FB.serverTimestamp(),
+  });
+}
+
+async function guardarEdicion(id) {
+  const r = regPorId(id);
+  const motivo = document.getElementById('regMotivo').value.trim();
+  const upd = {}, cambios = [];
+  const anota = (campo, antes, despues, valorGuardado) => { cambios.push({ campo, antes: antes ?? null, despues: despues ?? null }); upd[campo] = valorGuardado; };
+
+  // Fecha, equipo, sector
+  const fecha = document.getElementById('ed_fecha').value;
+  if (!fecha) return errorRegModal('La fecha es obligatoria.');
+  if (fecha !== r.fecha) anota('fecha', r.fecha, fecha, new Date(fecha)); // igual que la app: medianoche UTC de ese día
+  const equipo = document.getElementById('ed_equipo').value;
+  const sector = document.getElementById('ed_sector').value;
+  if (!sector) return errorRegModal('Elige un sector.');
+  if (equipo !== r.equipo) anota('equipo', r.equipo, equipo, equipo);
+  if (sector !== r.sector) anota('sector', r.sector, sector, sector);
+
+  if (r.tipo === 'Hito') {
+    const t = document.getElementById('ed_hito_tipo').value;
+    const d = document.getElementById('ed_hito_descripcion').value.trim();
+    if (t === 'Otro' && !d) return errorRegModal('Describe el hito (tipo "Otro").');
+    if (t !== r.hito_tipo) anota('hito_tipo', r.hito_tipo, t, t);
+    if (d !== (r.hito_descripcion || '')) anota('hito_descripcion', r.hito_descripcion || '', d, d);
+  } else {
+    for (const f of camposEdicion(r)) {
+      const txt = document.getElementById('ed_' + f.campo).value.trim();
+      if (txt === '') {
+        if (!f.opcional) return errorRegModal(`${nombreCampo(f.campo)} es obligatorio.`);
+        if (esNum(r[f.campo])) anota(f.campo, r[f.campo], '', '');
+        continue;
+      }
+      const n = parseFloat(txt);
+      if (isNaN(n) || n < f.min || n > f.max) return errorRegModal(`${nombreCampo(f.campo)} debe estar entre ${f.min} y ${f.max}.`);
+      if (!esNum(r[f.campo]) || Number(r[f.campo]) !== n) anota(f.campo, r[f.campo], n, typeof r[f.campo] === 'string' ? String(n) : n); // mismo formato que guardó la app
+    }
+    if (r.tipo === 'PorcentajeDrenaje' && tieneVol(r)) {
+      const g = parseFloat(document.getElementById('ed_vol_goteo_ml').value), d = parseFloat(document.getElementById('ed_vol_drenaje_ml').value);
+      if (!(g > 0)) return errorRegModal('El Vol. goteo debe ser mayor que 0.');
+      const pct = Math.round(d / g * 1000) / 10;
+      if (Number(r.PorcentajeDrenaje) !== pct) anota('PorcentajeDrenaje', r.PorcentajeDrenaje, pct, pct); // se recalcula solo
+    }
+    const obs = document.getElementById('ed_observacion').value.trim();
+    if (obs !== (r.observacion || '')) anota('observacion', r.observacion || '', obs, obs);
+  }
+
+  if (!cambios.length) return errorRegModal('No cambiaste ningún dato.');
+  if (!motivo) return errorRegModal('Escribe el motivo del cambio.');
+  try {
+    await FB.updateDoc(FB.doc(FB.db, 'mediciones', id), { ...upd, editado: true, editado_por: ME.nombre || '(sin nombre)', editado_por_uid: ME.uid, editado_en: FB.serverTimestamp() });
+    await registrarHistorialMedicion(r, 'editar', cambios, motivo);
+    cerrarRegModal();
+    await cargarDatos();
+  } catch (e) {
+    console.error(e);
+    errorRegModal('No se pudo guardar. Revisá tu conexión e intentá de nuevo.');
+  }
+}
+
+function abrirEliminar(id) {
+  const r = regPorId(id);
+  if (!r) return;
+  abrirRegModal('🗑️ Eliminar registro', `<div class="reg-resumen">${resumenRegistro(r)}</div>
+    <div style="color:#8fa3b3;font-size:12px;">El registro deja de verse en el dashboard, los gráficos, las alertas y el Excel, pero <b>no se borra de la base</b>:
+    queda marcado con quién lo eliminó y por qué, y se puede restaurar desde "Ver eliminados".</div>
+    ${campoMotivo('Ej: registro duplicado, cargado en el sector equivocado...')}`,
+    `<button class="graf-btn" style="background:var(--danger);color:#fff;" onclick="confirmarEliminar('${id}')">Eliminar</button>`);
+}
+async function confirmarEliminar(id) {
+  const r = regPorId(id);
+  const motivo = document.getElementById('regMotivo').value.trim();
+  if (!motivo) return errorRegModal('Escribe el motivo de la eliminación.');
+  try {
+    await FB.updateDoc(FB.doc(FB.db, 'mediciones', id), { anulado: true, anulado_por: ME.nombre || '(sin nombre)', anulado_por_uid: ME.uid, anulado_en: FB.serverTimestamp(), anulado_motivo: motivo });
+    await registrarHistorialMedicion(r, 'eliminar', [{ campo: 'anulado', antes: false, despues: true }], motivo);
+    cerrarRegModal();
+    await cargarDatos();
+  } catch (e) {
+    console.error(e);
+    errorRegModal('No se pudo eliminar. Revisá tu conexión e intentá de nuevo.');
+  }
+}
+
+const fechaHoraTS = t => t && t.toDate ? t.toDate().toLocaleString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+
+function abrirEliminados() {
+  const lista = [...ANULADOS].sort((a, b) => (b.anulado_en && b.anulado_en.toDate ? b.anulado_en.toDate() : 0) - (a.anulado_en && a.anulado_en.toDate ? a.anulado_en.toDate() : 0));
+  const cuerpo = `<div style="color:#8fa3b3;font-size:12px;margin-bottom:12px;">Registros eliminados dentro del rango de fechas filtrado (${formatFecha(document.getElementById('filtroDesde').value)} a ${formatFecha(document.getElementById('filtroHasta').value)}).</div>` +
+    (lista.length ? lista.map(r => `<div class="anulado-item">
+      ${resumenRegistro(r)}
+      <div style="color:#ef9a9a;font-size:12px;margin-top:6px;">🗑️ Eliminado por <b>${escH(r.anulado_por || '—')}</b> el ${fechaHoraTS(r.anulado_en)} — ${escH(r.anulado_motivo || '')}</div>
+      <div style="display:flex;gap:6px;margin-top:8px;align-items:center;">
+        <input class="input-modal" type="text" id="rest_${r.id}" maxlength="200" placeholder="Motivo para restaurar (obligatorio)" style="flex:1;">
+        <button class="mini-btn" onclick="restaurarRegistro('${r.id}')">↩️ Restaurar</button>
+      </div></div>`).join('') : '<div class="empty">No hay registros eliminados en este rango de fechas.</div>');
+  abrirRegModal(`🗑️ Registros eliminados (${lista.length})`, cuerpo, '');
+}
+async function restaurarRegistro(id) {
+  const r = regPorId(id);
+  const motivo = document.getElementById('rest_' + id).value.trim();
+  if (!motivo) return errorRegModal('Escribe el motivo para restaurar ese registro.');
+  try {
+    await FB.updateDoc(FB.doc(FB.db, 'mediciones', id), { anulado: false, restaurado_por: ME.nombre || '(sin nombre)', restaurado_por_uid: ME.uid, restaurado_en: FB.serverTimestamp(), restaurado_motivo: motivo });
+    await registrarHistorialMedicion(r, 'restaurar', [{ campo: 'anulado', antes: true, despues: false }], motivo);
+    await cargarDatos();
+    abrirEliminados();
+  } catch (e) {
+    console.error(e);
+    errorRegModal('No se pudo restaurar. Revisá tu conexión e intentá de nuevo.');
+  }
+}
+
+const ACCION_TXT = { editar: '✏️ Editado', eliminar: '🗑️ Eliminado', restaurar: '↩️ Restaurado', cambio: '🎯 Cambio de objetivo', quitar: '🗑️ Cambio de objetivo quitado' };
+const fmtCambio = v => {
+  if (v === null || v === undefined || v === '') return '—';
+  if (typeof v === 'object' && v.toDate) return formatFecha(fechaLocalISO(v.toDate()));
+  if (esNum(v) && /^-?\d+(\.\d+)?$/.test(String(v))) return String(Math.round(Number(v) * 1000) / 1000).replace('.', ',');
+  return String(v);
+};
+
+async function abrirHistorialRegistro(id) {
+  const r = regPorId(id);
+  abrirRegModal('📜 Historial del registro', `<div class="reg-resumen">${r ? resumenRegistro(r) : ''}</div><div id="histRegLista"><div class="loading"><div class="spinner"></div></div></div>`, '');
+  try {
+    const snap = await FB.getDocs(FB.query(FB.collection(FB.db, 'mediciones_historial'), FB.where('medicion_id', '==', id)));
+    const items = snap.docs.map(d => d.data()).sort((a, b) => (b.fecha && b.fecha.toDate ? b.fecha.toDate() : 0) - (a.fecha && a.fecha.toDate ? a.fecha.toDate() : 0));
+    document.getElementById('histRegLista').innerHTML = items.length ? items.map(h => `<div class="hist-row">
+      <div><b>${ACCION_TXT[h.accion] || h.accion}</b> por ${escH(h.usuario_nombre || '—')} · ${fechaHoraTS(h.fecha)}</div>
+      ${h.accion === 'editar' ? (h.cambios || []).map(c => `<div class="hist-meta">${nombreCampo(c.campo)}: ${escH(fmtCambio(c.antes))} → <b style="color:#fff">${escH(fmtCambio(c.despues))}</b></div>`).join('') : ''}
+      <div class="hist-meta">Motivo: ${escH(h.motivo || '—')}</div></div>`).join('') : '<div class="empty">Sin cambios registrados.</div>';
+  } catch (e) {
+    console.error(e);
+    document.getElementById('histRegLista').innerHTML = '<div class="empty">Error al cargar el historial.</div>';
+  }
+}
+
+// Historial de una colección completa (ej: cambios de objetivos)
+async function abrirHistorialGeneral(coleccion) {
+  const cont = document.getElementById('historialLista');
+  cont.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  document.getElementById('historialModal').querySelector('h3').textContent = 'Historial de cambios de objetivos';
+  document.getElementById('historialModal').style.display = 'flex';
+  try {
+    const snap = await FB.getDocs(FB.query(FB.collection(FB.db, coleccion), FB.orderBy('fecha', 'desc')));
+    cont.innerHTML = snap.empty ? '<div class="empty">Todavía no hay cambios registrados.</div>' : snap.docs.map(d => {
+      const h = d.data();
+      return `<div class="hist-row">
+        <div><b>${escH(h.equipo)}</b> · ${escH(h.parametro)}: ${fmtObj(h.valor_anterior)} → <b>${h.accion === 'quitar' ? '(cambio quitado)' : fmtObj(h.valor_nuevo)}</b> · vigente desde ${formatFecha(h.desde)}</div>
+        <div class="hist-meta">${ACCION_TXT[h.accion] || h.accion} — ${escH(h.motivo || '')}</div>
+        <div class="hist-meta">${escH(h.usuario_nombre || '—')} · ${fechaHoraTS(h.fecha)}</div></div>`;
+    }).join('');
+  } catch (e) {
+    console.error(e);
+    cont.innerHTML = '<div class="empty">Error al cargar el historial.</div>';
+  }
+}
+
+// ── NUEVO HITO DESDE LA WEB ─────────────────────────────────────────────────
+let nuevoHitoSectores = [];
+function abrirNuevoHito() {
+  nuevoHitoSectores = [];
+  const eq = document.getElementById('filtroEquipo').value;
+  const cuerpo = `<div style="color:#8fa3b3;font-size:12px;margin-bottom:12px;">Cambio de manejo que puede alterar las curvas. Se puede registrar aunque ese día no haya medición.</div>
+    <div class="reg-campos">
+      <label>Fecha del hito <input class="input-modal" type="date" id="nh_fecha" value="${fechaLocalISO()}"></label>
+      <label>Equipo <select class="input-modal" id="nh_equipo" onchange="nuevoHitoSectores=[];renderSectoresHito()"><option value="">Seleccionar</option>${EQUIPOS.map(e => `<option${e === eq ? ' selected' : ''}>${e}</option>`).join('')}</select></label>
+      <div class="reg-campo-full" id="nh_sectores"></div>
+      <label>Tipo de hito <select class="input-modal" id="nh_tipo"><option value="">Seleccionar</option>${TIPOS_HITO.map(t => `<option value="${t}">${hitoIcon(t)} ${t}</option>`).join('')}</select></label>
+      <div class="reg-campo-full"><label>Descripción (obligatoria si es "Otro") <textarea class="input-modal" id="nh_desc" rows="2" maxlength="200" placeholder="Ej: nueva receta R-12, solo agua por CE alta, ácido fosfórico 2 L/ha..."></textarea></label></div>
+    </div>`;
+  abrirRegModal('📌 Nuevo hito', cuerpo, `<button class="graf-btn" style="background:#ffd54f;color:#1a1a1a;" onclick="guardarNuevoHito()">Registrar hito</button>`);
+  renderSectoresHito();
+}
+function renderSectoresHito() {
+  const eq = document.getElementById('nh_equipo').value;
+  const cont = document.getElementById('nh_sectores');
+  if (!eq) { cont.innerHTML = ''; return; }
+  const lista = sectoresDe(eq);
+  const todos = lista.length && nuevoHitoSectores.length === lista.length;
+  cont.innerHTML = `<label>Sectores (${nuevoHitoSectores.length} de ${lista.length})</label>
+    <button type="button" class="sec-chip ${todos ? 'on' : ''}" style="width:100%;text-align:center;margin:4px 0 6px;" onclick="toggleSectorHito('*')">${todos ? '✓ Todos los sectores del equipo' : 'Marcar todos los sectores del equipo'}</button>
+    <div class="sec-chips">${lista.map(x => `<button type="button" class="sec-chip ${nuevoHitoSectores.includes(x) ? 'on' : ''}" onclick="toggleSectorHito('${x}')">${nuevoHitoSectores.includes(x) ? '✓ ' : ''}${x}</button>`).join('')}</div>`;
+}
+function toggleSectorHito(x) {
+  const lista = sectoresDe(document.getElementById('nh_equipo').value);
+  if (x === '*') nuevoHitoSectores = nuevoHitoSectores.length === lista.length ? [] : [...lista];
+  else nuevoHitoSectores = nuevoHitoSectores.includes(x) ? nuevoHitoSectores.filter(s => s !== x) : [...nuevoHitoSectores, x];
+  renderSectoresHito();
+}
+async function guardarNuevoHito() {
+  const fecha = document.getElementById('nh_fecha').value;
+  const equipo = document.getElementById('nh_equipo').value;
+  const tipo = document.getElementById('nh_tipo').value;
+  const desc = document.getElementById('nh_desc').value.trim();
+  if (!fecha) return errorRegModal('Indica la fecha del hito.');
+  if (!equipo) return errorRegModal('Elige un equipo.');
+  if (!nuevoHitoSectores.length) return errorRegModal('Marca al menos un sector.');
+  if (!tipo) return errorRegModal('Elige el tipo de hito.');
+  if (tipo === 'Otro' && !desc) return errorRegModal('Describe el hito (tipo "Otro").');
+  try {
+    // Un registro por sector, igual que en la app de captura
+    for (const sector of nuevoHitoSectores) {
+      await FB.addDoc(FB.collection(FB.db, 'mediciones'), {
+        tipo: 'Hito', trabajador_uid: ME.uid, trabajador_nombre: ME.nombre || '(sin nombre)', fecha: new Date(fecha),
+        equipo, sector, hito_tipo: tipo, hito_descripcion: desc, origen: 'web', creado_en: FB.serverTimestamp(),
+      });
+    }
+    cerrarRegModal();
+    await cargarDatos();
+  } catch (e) {
+    console.error(e);
+    errorRegModal('No se pudo registrar. Revisá tu conexión e intentá de nuevo.');
+  }
+}
+
+// Tabla de hitos en Registros (respeta Equipo, Sector y fechas del filtro de arriba y el Sector de Registros)
+function renderTablaHitos() {
+  const tbody = document.getElementById('tablaHitosBody');
+  if (!tbody) return;
+  const equipo = document.getElementById('filtroEquipo').value;
+  const sector = document.getElementById('filtroSector').value;
+  const desde = document.getElementById('filtroDesde').value;
+  const hasta = document.getElementById('filtroHasta').value;
+  const lista = HITOS_DATOS.filter(r => (!equipo || r.equipo === equipo) && (!sector || r.sector === sector) &&
+    (!desde || r.fecha >= desde) && (!hasta || r.fecha <= hasta) && (!currentRegSector || r.sector === currentRegSector))
+    .sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
+  document.getElementById('tablaHitosCuenta').textContent = `(${lista.length})`;
+  tbody.innerHTML = lista.length ? lista.map(r => `<tr data-id="${r.id}">
+    <td>${formatFecha(r.fecha)}</td><td>${escH(r.equipo || '—')}</td><td>${escH(r.sector || '—')}</td>
+    <td><span class="hito-chip">${hitoIcon(r.hito_tipo)} ${escH(r.hito_tipo || '')}</span></td>
+    <td>${escH(r.hito_descripcion || '—')}</td>
+    <td>${escH((r.trabajador || '—').split(' ')[0])}<span class="vol-sub">${r.origen === 'web' ? 'Web' : 'App'}</span></td>
+    ${celdaAcciones(r)}</tr>`).join('') : '<tr><td colspan="7" class="empty">Sin hitos en el período filtrado</td></tr>';
 }
 
 // Coma decimal en vez de punto, para tablas/tarjetas/alertas/Excel — NO se usa dentro de los gráficos (Chart.js sigue con punto)
@@ -1535,11 +2236,11 @@ function fmtComma(v, decimales = 2) {
   return v.toFixed(decimales).replace('.', ',');
 }
 
-function fmtVal(val, param) {
+function fmtVal(val, param, reg) {
   if (val === '' || val === null || val === undefined) return '<span style="color:var(--dim)">—</span>';
   const v = parseFloat(val);
   if (isNaN(v)) return '<span style="color:var(--dim)">—</span>';
-  const estado = getEstado(param, v);
+  const estado = getEstado(param, v, reg && reg.tipo, reg && reg.equipo);
   const color = estado === 'danger' ? 'var(--danger)' : estado === 'warn' ? 'var(--warn)' : 'var(--text)';
   return `<span style="color:${color};font-weight:${estado !== 'ok' ? '700' : '400'}">${fmtComma(v)}</span>`;
 }
@@ -1660,19 +2361,182 @@ function actualizarRegSectores() {
 }
 
 const RE_FECHA_ISO = /^\d{4}-\d{2}-\d{2}$/;
+// ── HITOS ──────────────────────────────────────────────────────────────────
+let HITOS_DATOS = []; // registros tipo "Hito" (desde la app o desde la web)
+let ANULADOS = [];    // registros eliminados (marcados), del rango de fechas cargado
+// Vienen dentro de las mediciones (hito_tipo / hito_descripcion), registrados en la app de captura.
+const HITO_INFO = {
+  'Cambio de objetivo':                { icon: '🎯', corto: 'Cambio objetivo' }, // automático (editor de objetivos)
+  'Cambio de receta':                  { icon: '🧪', corto: 'Cambio receta' },
+  'Cambio de objetivo de CE':          { icon: '🎯', corto: 'Cambio obj. CE' },
+  'Riego solo agua (lavado de sales)': { icon: '🧂', corto: 'Lavado de sales' },
+  'Aplicación de productos vía riego': { icon: '💊', corto: 'Aplicación productos' },
+  'Otro':                              { icon: '📌', corto: 'Otro' },
+};
+const hitoIcon = t => (HITO_INFO[t] || HITO_INFO.Otro).icon;
+const TIPOS_HITO = Object.keys(HITO_INFO).filter(t => t !== 'Cambio de objetivo');
+function hitoCorto(h) {
+  if (h.auto) return `🎯 Obj. ${h.param} ${h.descripcion.split(': ')[1] || ''}`.replace(' → ', '→');
+  const info = HITO_INFO[h.tipo];
+  if (info && h.tipo !== 'Otro') return `${info.icon} ${info.corto}`;
+  const d = h.descripcion || h.tipo || 'Hito';
+  return `📌 ${d.length > 26 ? d.slice(0, 25) + '…' : d}`;
+}
+// Lista de hitos sin duplicar (el mismo hito anotado en Goteo y en Drenaje del mismo sector y día cuenta una vez)
+function extraerHitos(lista) {
+  const vistos = new Map();
+  lista.forEach(r => {
+    if (!r.hito_tipo) return;
+    const key = [r.fecha, r.equipo, r.sector, r.hito_tipo, (r.hito_descripcion || '').trim().toLowerCase()].join('|');
+    if (!vistos.has(key)) vistos.set(key, { id: r.id, fecha: r.fecha, equipo: r.equipo, sector: r.sector, tipo: r.hito_tipo, descripcion: (r.hito_descripcion || '').trim(), trabajador: r.trabajador, origen: r.origen === 'web' ? 'Web (dashboard)' : 'App de captura', editado: !!r.editado });
+  });
+  return [...vistos.values()].sort((a, b) => (a.fecha || '').localeCompare(b.fecha || ''));
+}
+// Hitos que corresponden a lo que se ve en Gráficos: respeta Equipo, Sector y fechas del filtro, pero NO el Tipo
+// (un hito anotado en Drenaje también afecta las curvas de Goteo de ese sector)
+let HITOS_GRAF = [];
+let HITOS_MOSTRAR_SECTOR = true;
+// Hitos registrados (app o web) que calzan con el Equipo, Sector y fechas del filtro de arriba
+function hitosFiltrados() {
+  const equipo = document.getElementById('filtroEquipo').value;
+  const sector = document.getElementById('filtroSector').value;
+  const desde = document.getElementById('filtroDesde').value;
+  const hasta = document.getElementById('filtroHasta').value;
+  return extraerHitos(HITOS_DATOS.filter(r =>
+    (!equipo || r.equipo === equipo) && (!sector || r.sector === sector) &&
+    (!desde || r.fecha >= desde) && (!hasta || r.fecha <= hasta)));
+}
+// Equipo cuyos cambios de objetivo se muestran: el del filtro, o el único equipo del sector filtrado
+function equipoParaObjetivos() {
+  const eq = document.getElementById('filtroEquipo').value;
+  if (eq) return eq;
+  if (!document.getElementById('filtroSector').value) return '';
+  const eqs = [...new Set(FILTRADOS.map(r => r.equipo).filter(Boolean))];
+  return eqs.length === 1 ? eqs[0] : '';
+}
+function calcularHitosGraf() {
+  const desde = document.getElementById('filtroDesde').value;
+  const hasta = document.getElementById('filtroHasta').value;
+  const eqObj = equipoParaObjetivos();
+  const auto = eqObj ? hitosDeObjetivos(eqObj, desde, hasta) : [];
+  HITOS_GRAF = [...hitosFiltrados(), ...auto].sort((a, b) => (a.fecha || '').localeCompare(b.fecha || ''));
+  HITOS_MOSTRAR_SECTOR = !document.getElementById('filtroSector').value;
+  const card = document.getElementById('hitosCard');
+  if (!card) return;
+  document.getElementById('hitosCuenta').textContent = `(${HITOS_GRAF.length})`;
+  document.getElementById('hitosLista').innerHTML = HITOS_GRAF.length ? [...HITOS_GRAF].reverse().map(h => `
+    <div class="hitos-item"><span class="f">${formatFecha(h.fecha)}</span>
+      <span><span class="hito-chip">${hitoIcon(h.tipo)} ${h.tipo}</span>
+      ${h.descripcion ? ' ' + h.descripcion : ''}
+      <span style="color:var(--muted);font-size:11px;"> · ${h.equipo || ''}${h.sector ? ' · ' + h.sector : ''}${h.trabajador ? ' · ' + h.trabajador.split(' ')[0] : ''}${h.auto ? ' · automático (editor de objetivos)' : ''}</span>
+      ${h.auto ? '' : `<button class="acc-btn" title="Editar" onclick="abrirEditar('${h.id}')">✏️</button><button class="acc-btn" title="Eliminar" onclick="abrirEliminar('${h.id}')">🗑️</button>`}</span></div>`).join('')
+    : '<div style="color:var(--muted);font-size:12px;">Sin hitos en el período filtrado.</div>';
+}
+
+// Plugin de Chart.js: dibuja cada hito como línea vertical punteada con un globo de texto arriba.
+// Si el día del hito no tiene medición en ese gráfico, la línea se ubica entre las fechas vecinas.
+const pluginHitos = {
+  id: 'hitos',
+  afterDatasetsDraw(chart) {
+    const hitos = chart.options.plugins.hitos && chart.options.plugins.hitos.lista;
+    const fechas = chart.$fechasISO;
+    if (!hitos || !hitos.length || !fechas || !fechas.length) return;
+    const { ctx, chartArea: a, scales: { x } } = chart;
+    // Agrupar hitos por fecha (varios el mismo día → un solo globo con varias líneas de texto)
+    const porFecha = {};
+    hitos.forEach(h => { (porFecha[h.fecha] = porFecha[h.fecha] || []).push(h); });
+    const posX = f => {
+      const i = fechas.indexOf(f);
+      if (i >= 0) return x.getPixelForValue(i);
+      if (f < fechas[0] || f > fechas[fechas.length - 1]) return null;
+      const j = fechas.findIndex(l => l > f);
+      return (x.getPixelForValue(j - 1) + x.getPixelForValue(j)) / 2;
+    };
+    ctx.save();
+    ctx.font = '600 10px Inter, system-ui, sans-serif';
+    const ocupados = []; // para escalonar globos que se pisarían
+    Object.keys(porFecha).sort().forEach(f => {
+      const px = posX(f);
+      if (px === null) return;
+      const grupo = porFecha[f];
+      // Línea vertical
+      ctx.strokeStyle = '#ffd54f'; ctx.lineWidth = 1.5; ctx.setLineDash([5, 4]);
+      ctx.beginPath(); ctx.moveTo(px, a.top); ctx.lineTo(px, a.bottom); ctx.stroke(); ctx.setLineDash([]);
+      // Globo
+      const fCorta = f.slice(8, 10) + '/' + f.slice(5, 7); // fecha corta en el globo, para saber a qué línea corresponde
+      const lineas = grupo.slice(0, 3).map(h => `${fCorta} ${hitoCorto(h)}` + (HITOS_MOSTRAR_SECTOR && h.sector ? ` · ${h.sector}` : ''));
+      if (grupo.length > 3) lineas.push(`+${grupo.length - 3} más`);
+      const w = Math.max(...lineas.map(t => ctx.measureText(t).width)) + 12;
+      const hBox = lineas.length * 13 + 6;
+      let bx = px + 5;
+      if (bx + w > a.right) bx = px - w - 5;
+      if (bx < a.left) bx = a.left;
+      let by = a.top + 2;
+      while (ocupados.some(o => bx < o.x2 && bx + w > o.x1 && by < o.y2 && by + hBox > o.y1) && by < a.bottom - hBox) by += hBox + 3;
+      ocupados.push({ x1: bx, x2: bx + w, y1: by, y2: by + hBox });
+      ctx.fillStyle = 'rgba(30, 26, 8, 0.92)'; ctx.strokeStyle = '#ffd54f'; ctx.lineWidth = 1;
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(bx, by, w, hBox, 4); else ctx.rect(bx, by, w, hBox);
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#ffe082'; ctx.textBaseline = 'top';
+      lineas.forEach((t, k) => ctx.fillText(t, bx + 6, by + 4 + k * 13));
+    });
+    ctx.restore();
+  }
+};
+
+// ── % DRENAJE: el % del día se calcula con los volúmenes (total drenado ÷ total goteado) ──
+// Registros nuevos traen vol_goteo_ml / vol_drenaje_ml por riego. Los antiguos solo traen el %, y se promedian.
+const tieneVol = r => esNum(r.vol_goteo_ml) && esNum(r.vol_drenaje_ml) && Number(r.vol_goteo_ml) > 0;
+function pctPonderado(lista) {
+  const conVol = lista.filter(tieneVol);
+  if (conVol.length) {
+    const g = conVol.reduce((a, r) => a + Number(r.vol_goteo_ml), 0);
+    const d = conVol.reduce((a, r) => a + Number(r.vol_drenaje_ml), 0);
+    return (d / g) * 100;
+  }
+  const vals = lista.map(r => parseFloat(r.PorcentajeDrenaje)).filter(v => !isNaN(v));
+  return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+}
+function getLineaPctDrenaje(data) {
+  const porFecha = {};
+  data.forEach(r => { (porFecha[r.fecha] = porFecha[r.fecha] || []).push(r); });
+  const labels = Object.keys(porFecha).sort();
+  return {
+    labels,
+    values: labels.map(f => pctPonderado(porFecha[f])),
+    observaciones: labels.map(f => {
+      const regs = porFecha[f];
+      const conVol = regs.filter(tieneVol);
+      const partes = [];
+      if (conVol.length) partes.push(`${conVol.length} riego${conVol.length > 1 ? 's' : ''} · ${conVol.reduce((a, r) => a + Number(r.vol_drenaje_ml), 0).toLocaleString('es-CL')} / ${conVol.reduce((a, r) => a + Number(r.vol_goteo_ml), 0).toLocaleString('es-CL')} ml`);
+      const obs = [...new Set(regs.map(r => r.observacion).filter(Boolean))];
+      if (obs.length) partes.push(obs.join('; '));
+      return partes.length ? partes.join(' — ') : undefined;
+    })
+  };
+}
+
 function mkChart(id, type, labels, datasets, opts = {}) {
   if (charts[id]) charts[id].destroy();
   const el = document.getElementById(id);
   if (!el) return;
   // Si los labels son fechas AAAA-MM-DD, se muestran como DD-MM-AAAA sin tocar el orden ni los datos
   const labelsMostrados = labels.map(l => RE_FECHA_ISO.test(l) ? formatFecha(l) : l);
+  // Hitos: solo en gráficos de línea cuyo eje X son fechas
+  const esSerieFechas = type === 'line' && labels.length && labels.every(l => RE_FECHA_ISO.test(l));
+  const paramChart = (id.match(/(pH|CE|Nitratos|Potasio|Calcio|Sodio)$/) || [])[1];
+  const hitosChart = esSerieFechas && HITOS_GRAF.length
+    ? HITOS_GRAF.filter(h => h.fecha >= labels[0] && h.fecha <= labels[labels.length - 1] && (!h.auto || h.param === paramChart)) : [];
   charts[id] = new Chart(el.getContext('2d'), {
     type,
     data: { labels: labelsMostrados, datasets },
+    plugins: [pluginHitos],
     options: {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
+        hitos: { lista: hitosChart },
         legend: { labels: { color: '#6b9470', font: { size: 10 } } },
         tooltip: {
           callbacks: {
@@ -1690,6 +2554,8 @@ function mkChart(id, type, labels, datasets, opts = {}) {
       ...opts
     }
   });
+  charts[id].$fechasISO = esSerieFechas ? labels : null;
+  if (hitosChart.length) charts[id].draw();
 }
 
 function getDias(data) {
@@ -1781,6 +2647,7 @@ function renderGraficos() {
   }
 
   actualizarNotaObjetivos();
+  calcularHitosGraf();
 
   // Base: ya viene filtrada por el panel general de arriba (Tipo, Equipo, Sector, Fecha desde/hasta)
   const base = FILTRADOS;
@@ -1884,8 +2751,15 @@ function renderGraficos() {
     mkChart('chartPctDrenajeDias', 'bar', d.labels, [{ label: 'Registros', data: d.values, backgroundColor: '#42a5f566', borderColor: '#42a5f5', borderWidth: 1 }]);
     const s = getSectores(pctDrenaje);
     mkChart('chartPctDrenajeSectores', 'bar', s.labels, [{ label: 'Registros', data: s.values, backgroundColor: '#42a5f566', borderColor: '#42a5f5', borderWidth: 1 }], { indexAxis: 'y' });
-    const l = getLinea(pctDrenaje, 'PorcentajeDrenaje');
-    mkChart('chartPctDrenajeValor', 'line', l.labels, [{ label: '% Drenaje promedio', data: l.values, observaciones: l.observaciones, borderColor: '#42a5f5', backgroundColor: '#42a5f522', tension: 0.4, pointRadius: 3, fill: true }]);
+    const l = getLineaPctDrenaje(pctDrenaje);
+    mkChart('chartPctDrenajeValor', 'line', l.labels, [{ label: '% Drenaje del día', data: l.values, observaciones: l.observaciones, borderColor: '#42a5f5', backgroundColor: '#42a5f522', tension: 0.4, pointRadius: 3, fill: true }]);
+    const conVol = pctDrenaje.filter(tieneVol);
+    const fv = [...new Set(conVol.map(r => r.fecha))].sort();
+    const sumaVol = (f, campo) => conVol.filter(r => r.fecha === f).reduce((a, r) => a + Number(r[campo]), 0);
+    mkChart('chartPctDrenajeVol', 'bar', fv, [
+      { label: 'Vol. goteo (ml)',   data: fv.map(f => sumaVol(f, 'vol_goteo_ml')),   backgroundColor: '#4caf5099', borderColor: '#4caf50', borderWidth: 1 },
+      { label: 'Vol. drenaje (ml)', data: fv.map(f => sumaVol(f, 'vol_drenaje_ml')), backgroundColor: '#42a5f599', borderColor: '#42a5f5', borderWidth: 1 },
+    ]);
   }
 
   if (currentGrafView === 'comparacion') {
@@ -1974,7 +2848,7 @@ function renderResumenGeneral(base, goteo, drenaje, humedad, pctDrenaje, lisimet
   paramsTodos.forEach(p => porParam[p] = { total: 0, fuera: 0 });
   base.filter(r => r.tipo !== 'Humedad').forEach(r => {
     paramsTodos.forEach(p => {
-      const e = getEstado(p, r[p]);
+      const e = getEstado(p, r[p], r.tipo, r.equipo);
       if (!e) return;
       totalVals++; porParam[p].total++;
       if (e !== 'ok') { fuera++; porParam[p].fuera++; }
@@ -1983,8 +2857,8 @@ function renderResumenGeneral(base, goteo, drenaje, humedad, pctDrenaje, lisimet
   });
   const pctFuera = totalVals ? (fuera / totalVals) * 100 : null;
   const colorPctFuera = pctFuera === null ? 'var(--muted)' : pctFuera > 25 ? 'var(--danger)' : pctFuera > 10 ? 'var(--warn)' : 'var(--ok)';
-  const pctDrenProm = promedio(valoresNum(pctDrenaje, 'PorcentajeDrenaje'));
-  const estPct = getEstado('PorcentajeDrenaje', pctDrenProm);
+  const pctDrenProm = pctPonderado(pctDrenaje);
+  const estPct = getEstado('PorcentajeDrenaje', pctDrenProm, 'PorcentajeDrenaje', currentGenEquipo);
   const colorPct = estPct ? COLOR_ESTADO[estPct] : 'var(--muted)';
 
   document.getElementById('genKpis').innerHTML = `
@@ -2001,17 +2875,19 @@ function renderResumenGeneral(base, goteo, drenaje, humedad, pctDrenaje, lisimet
     if (!regs.length) {
       return `<tr><td><b>${eq}</b><div class="matriz-sub">Sin registros</div></td>${paramsQuim.map(() => '<td style="color:var(--dim)">—</td>').join('')}</tr>`;
     }
-    const objEq = OBJETIVOS_POR_EQUIPO[eq] || {};
+    const hastaMat = document.getElementById('filtroHasta').value || fechaLocalISO();
     const celdas = paramsQuim.map(p => {
       const v = promedio(valoresNum(regs, p));
       if (v === null) return '<td style="color:var(--dim)">—</td>';
-      const est = getEstado(p, v);
+      const est = getEstado(p, v, 'Goteo', eq);
       const color = est ? COLOR_ESTADO[est] : 'var(--text)';
       const fondo = est && est !== 'ok' ? `background:${COLOR_ESTADO[est]}14;` : '';
-      const obj = objEq[p];
+      // Diferencia promedio contra el objetivo que regía el día de cada medición (los objetivos tienen historia)
+      const deltas = regs.map(r => { const x = parseFloat(r[p]); const o = objetivoEn(eq, p, r.fecha); return isNaN(x) || o === null ? null : x - o; }).filter(d => d !== null);
+      const obj = objetivoEn(eq, p, hastaMat);
       let sub = '';
-      if (obj !== null && obj !== undefined && obj !== '' && !isNaN(obj)) {
-        const delta = v - obj;
+      if (obj !== null && deltas.length) {
+        const delta = promedio(deltas);
         sub = `<div class="matriz-sub">obj ${fmtParam(p, obj)} · ${delta >= 0 ? '+' : '−'}${fmtParam(p, Math.abs(delta))}</div>`;
       }
       return `<td style="${fondo}"><div class="matriz-val" style="color:${color}">${fmtParam(p, v)}</div>${sub}</td>`;
@@ -2025,10 +2901,11 @@ function renderResumenGeneral(base, goteo, drenaje, humedad, pctDrenaje, lisimet
     </table>`;
 
   // ── Fila 3a: % Drenaje promedio por sector, con franja del rango óptimo ──
-  const rp = RANGOS.PorcentajeDrenaje || {};
+  const rp = rangoPara('PorcentajeDrenaje', 'PorcentajeDrenaje', currentGenEquipo) || {};
   const sectPct = ordenarSectores([...new Set(pctDrenaje.map(r => r.sector).filter(Boolean))]);
-  const valsPct = sectPct.map(s => promedio(valoresNum(pctDrenaje.filter(r => r.sector === s), 'PorcentajeDrenaje')));
-  const colPct = valsPct.map(v => { const e = getEstado('PorcentajeDrenaje', v); return e ? COLOR_ESTADO[e] : '#6b9470'; });
+  const valsPct = sectPct.map(s => pctPonderado(pctDrenaje.filter(r => r.sector === s)));
+  const eqDeSector = s => (pctDrenaje.find(r => r.sector === s) || {}).equipo;
+  const colPct = valsPct.map((v, i) => { const e = getEstado('PorcentajeDrenaje', v, 'PorcentajeDrenaje', eqDeSector(sectPct[i])); return e ? COLOR_ESTADO[e] : '#6b9470'; });
   const dsPct = [{ type: 'bar', label: '% Drenaje', data: valsPct, backgroundColor: colPct.map(c => c + '99'), borderColor: colPct, borderWidth: 1, order: 2 }];
   if (rp.min !== null && rp.min !== undefined && rp.max !== null && rp.max !== undefined && sectPct.length) {
     dsPct.push(
@@ -2094,49 +2971,60 @@ function renderResumenGeneral(base, goteo, drenaje, humedad, pctDrenaje, lisimet
 // ── ALERTAS Z-SCORE ───────────────────────────────────────────────────────────
 function contarAlertas(datos) {
   let count = 0;
-  const params = ['pH','CE','Nitratos','Potasio','Calcio','Sodio'];
-  datos.filter(r => r.tipo !== 'Humedad').forEach(r => {
-    params.forEach(p => {
-      if (getEstado(p, r[p]) === 'danger') count++;
+  datos.forEach(r => {
+    paramsDeTipo(r.tipo).forEach(p => {
+      if (getEstado(p, r[p], r.tipo, r.equipo) === 'danger') count++;
     });
   });
   return count;
 }
 
-function renderAlertas() {
-  const params = ['pH','CE','Nitratos','Potasio','Calcio','Sodio'];
-  const alertas = [];
+let alertasLimite = 30;
+function verMasAlertas() { alertasLimite += 30; renderAlertas(); }
 
-  FILTRADOS.filter(r => r.tipo !== 'Humedad').forEach(r => {
-    params.forEach(p => {
-      const estado = getEstado(p, r[p]);
+function renderAlertas() {
+  const alertas = [];
+  FILTRADOS.forEach(r => {
+    paramsDeTipo(r.tipo).forEach(p => {
+      const estado = getEstado(p, r[p], r.tipo, r.equipo);
       if (estado === 'danger' || estado === 'warn') {
-        const v = fmtComma(parseFloat(r[p]));
-        const rango = RANGOS[p];
-        let msg = '';
-        if (parseFloat(r[p]) < (rango.alerta_baja || rango.min)) msg = `Valor muy bajo (${v})`;
-        else msg = `Valor muy alto (${v})`;
-        alertas.push({ id: r.id, tipo: r.tipo, fecha: r.fecha, equipo: r.equipo, sector: r.sector, param: p, msg, estado });
+        const val = parseFloat(r[p]);
+        const rango = rangoPara(p, r.tipo, r.equipo);
+        const limiteBajo = esNum(rango.alerta_baja) && val < rango.alerta_baja ? rango.alerta_baja : rango.min;
+        const msg = val < limiteBajo || (esNum(rango.min) && val < rango.min) ? `Valor bajo (${fmtComma(val)})` : `Valor alto (${fmtComma(val)})`;
+        alertas.push({ id: r.id, tipo: r.tipo, fecha: r.fecha, creadoMs: r.creadoMs || 0, hora: r.hora, equipo: r.equipo, sector: r.sector, param: p, msg, estado });
       }
     });
   });
+  // Más recientes primero
+  alertas.sort((a, b) => (b.fecha || '').localeCompare(a.fecha || '') || b.creadoMs - a.creadoMs);
 
+  const resumen = document.getElementById('alertasResumen');
   const container = document.getElementById('alertasContainer');
   if (!alertas.length) {
+    resumen.innerHTML = '';
     container.innerHTML = '<div class="empty">✓ Sin alertas — todos los valores dentro del rango</div>';
     return;
   }
+  const nRojas = alertas.filter(a => a.estado === 'danger').length;
+  const mostradas = alertas.slice(0, alertasLimite);
+  resumen.innerHTML = `<b>${alertas.length}</b> alerta${alertas.length > 1 ? 's' : ''} en el período filtrado:
+    <span style="color:var(--danger);font-weight:700;">🔴 ${nRojas} fuera de límite</span> ·
+    <span style="color:var(--warn);font-weight:700;">🟡 ${alertas.length - nRojas} fuera del rango óptimo</span>
+    <span style="color:var(--muted);font-size:11px;"> — mostrando las ${mostradas.length} más recientes</span>`;
 
-  container.innerHTML = alertas.slice(-20).reverse().map(a => `
-    <div class="alert-item" style="cursor:pointer" onclick="irARegistro('${a.id}','${a.tipo}','${a.fecha}','${(a.sector||'').replace(/'/g,"\\'")}')" title="Ver este registro en Registros">
+  container.innerHTML = mostradas.map(a => `
+    <div class="alert-item" style="cursor:pointer;border-left-color:${a.estado === 'danger' ? 'var(--danger)' : 'var(--warn)'}" onclick="irARegistro('${a.id}','${a.tipo}','${a.fecha}','${(a.sector||'').replace(/'/g,"\\'")}')" title="Ver este registro en Registros">
       <div class="alert-icon">${a.estado === 'danger' ? '🔴' : '🟡'}</div>
       <div class="alert-text">
-        <strong>${a.param}</strong> — ${a.msg}
-        <br><span style="color:var(--muted);font-size:11px">${a.tipo} · ${a.equipo || ''} · ${a.sector || ''}</span>
+        <strong style="color:${a.estado === 'danger' ? 'var(--danger)' : 'var(--warn)'}">${nombreParam(a.param)}</strong> — ${a.msg}
+        <br><span style="color:var(--muted);font-size:11px">${NOMBRE_TIPO[a.tipo] || a.tipo} · ${a.equipo || ''} · ${a.sector || ''}</span>
       </div>
-      <div class="alert-time">${formatFecha(a.fecha) || ''}</div>
+      <div class="alert-time">${formatFecha(a.fecha) || ''}${a.hora ? '<br>' + a.hora : ''}</div>
     </div>
-  `).join('');
+  `).join('') + (alertas.length > alertasLimite
+    ? `<div style="text-align:center;margin-top:10px;"><button class="graf-btn" onclick="verMasAlertas()">Ver ${Math.min(30, alertas.length - alertasLimite)} más</button></div>`
+    : '');
 }
 
 // ── SALTO DESDE ALERTA HACIA EL REGISTRO EXACTO EN LA TABLA ────────────────
@@ -2213,6 +3101,8 @@ async function descargarExcel() {
     const n = parseFloat(v);
     return isNaN(n) ? '' : fmtComma(n);
   }
+  // Volúmenes en ml: número entero (para poder sumar en Excel)
+  const mlXls = v => esNum(v) ? Math.round(Number(v)) : '';
 
   // Paleta tenue, consistente con los colores que ya usa el dashboard
   const PALETA = {
@@ -2237,11 +3127,11 @@ async function descargarExcel() {
 
   // ── Hoja 1 — Todos los registros (columnas separadas para Humedad y % Drenaje, sin mezclar) ──
   const wsTodos = wb.addWorksheet('Todos los registros');
-  const headersTodos = ['Tipo','Fecha','Hora','Trabajador','Equipo','Sector','pH','CE','Nitratos','Potasio','Calcio','Sodio','Hilera','H. Inicial','H. Media','H. Final','% Drenaje','Observación'];
+  const headersTodos = ['Tipo','Fecha','Hora','Trabajador','Equipo','Sector','pH','CE','Nitratos','Potasio','Calcio','Sodio','Hilera','H. Inicial','H. Media','H. Final','Riego','Vol. goteo (ml)','Vol. drenaje (ml)','% Drenaje','Observación','Editado'];
   headerRow(wsTodos, headersTodos, PALETA.todos);
   wsTodos.columns = [
     {width:12},{width:12},{width:9},{width:22},{width:18},{width:16},{width:8},{width:8},
-    {width:10},{width:10},{width:10},{width:10},{width:8},{width:11},{width:11},{width:11},{width:11},{width:26}
+    {width:10},{width:10},{width:10},{width:10},{width:8},{width:11},{width:11},{width:11},{width:8},{width:14},{width:15},{width:11},{width:26},{width:10}
   ];
   const coloresPorTipo = { Goteo: 'FFDCEDC8', Drenaje: 'FFE6D6F5', Humedad: 'FFFFF0BF', PorcentajeDrenaje: 'FFDCEEFB', Lisimetro: 'FFD6E4F0' };
   const etiquetaTipo = { PorcentajeDrenaje: '% Drenaje', Lisimetro: 'Lisímetro' };
@@ -2255,8 +3145,10 @@ async function descargarExcel() {
       isMed ? numXls(r.Potasio) : '', isMed ? numXls(r.Calcio) : '', isMed ? numXls(r.Sodio) : '',
       isHum ? (r.hilera || '') : '', isHum ? numXls(r.humedad_inicial) : '',
       isHum ? numXls(r.humedad_media) : '', isHum ? numXls(r.humedad_final) : '',
+      isPct ? (r.riego || '') : '', isPct ? mlXls(r.vol_goteo_ml) : '', isPct ? mlXls(r.vol_drenaje_ml) : '',
       isPct ? numXls(r.PorcentajeDrenaje) : '',
-      r.observacion || ''
+      r.observacion || '',
+      r.editado ? 'Sí' : ''
     ]);
     const colorFila = coloresPorTipo[r.tipo];
     if (colorFila) {
@@ -2293,11 +3185,11 @@ async function descargarExcel() {
 
   // ── Hoja 5 — % Drenaje ──
   const wsPct = wb.addWorksheet('% Drenaje');
-  const headersPct = ['Fecha','Hora','Trabajador','Equipo','Sector','% Drenaje','Observación'];
+  const headersPct = ['Fecha','Hora','Trabajador','Equipo','Sector','Riego','Vol. goteo (ml)','Vol. drenaje (ml)','% Drenaje','Observación'];
   headerRow(wsPct, headersPct, PALETA.pctdrenaje);
-  wsPct.columns = [{width:12},{width:9},{width:22},{width:18},{width:16},{width:12},{width:26}];
+  wsPct.columns = [{width:12},{width:9},{width:22},{width:18},{width:16},{width:8},{width:15},{width:16},{width:12},{width:26}];
   ordenarParaExcel(FILTRADOS.filter(r => r.tipo === 'PorcentajeDrenaje'), false).forEach(r => {
-    wsPct.addRow([formatFecha(r.fecha) || '', r.hora || '', r.trabajador || '', r.equipo || '', r.sector || '', numXls(r.PorcentajeDrenaje), r.observacion || '']);
+    wsPct.addRow([formatFecha(r.fecha) || '', r.hora || '', r.trabajador || '', r.equipo || '', r.sector || '', r.riego || '', mlXls(r.vol_goteo_ml), mlXls(r.vol_drenaje_ml), numXls(r.PorcentajeDrenaje), r.observacion || '']);
   });
 
   // ── Hoja 6 — Lisímetro ──
@@ -2308,8 +3200,19 @@ async function descargarExcel() {
     wsLisimetro.addRow([formatFecha(r.fecha) || '', r.hora || '', r.trabajador || '', r.equipo || '', r.sector || '', numXls(r.pH), numXls(r.CE), numXls(r.Nitratos), numXls(r.Potasio), numXls(r.Calcio), numXls(r.Sodio), r.observacion || '']);
   });
 
+  // ── Hoja 7 — Hitos ──
+  const wsHitos = wb.addWorksheet('Hitos');
+  headerRow(wsHitos, ['Fecha','Equipo','Sector','Tipo de hito','Descripción','Registrado en','Registrado por'], { header: 'FFB08900', text: 'FFFFFFFF' });
+  wsHitos.columns = [{width:12},{width:18},{width:16},{width:34},{width:44},{width:20},{width:22}];
+  const eqObjXls = equipoParaObjetivos();
+  const hitosXls = [...hitosFiltrados(), ...(eqObjXls ? hitosDeObjetivos(eqObjXls, document.getElementById('filtroDesde').value, document.getElementById('filtroHasta').value) : [])]
+    .sort((a, b) => (a.fecha || '').localeCompare(b.fecha || ''));
+  hitosXls.forEach(h => {
+    wsHitos.addRow([formatFecha(h.fecha) || '', h.equipo || '', h.sector || (h.auto ? 'Todo el equipo' : ''), h.tipo, h.descripcion || '', h.auto ? 'Editor de objetivos' : h.origen, h.trabajador || '']);
+  });
+
   // Descargar
-  const hoy = new Date().toISOString().split('T')[0];
+  const hoy = fechaLocalISO();
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   const url = URL.createObjectURL(blob);
@@ -2323,18 +3226,29 @@ async function descargarExcel() {
 }
 
 // ── INICIO ────────────────────────────────────────────────────────────────────
+// Recarga rangos, objetivos y mediciones (antes solo mediciones: un cambio de objetivo hecho
+// por otra persona no se veía hasta recargar la página)
+async function recargarTodo() {
+  await cargarRangos();
+  await cargarObjetivosGoteo();
+  await cargarDatos();
+}
+
 function iniciarApp() {
   cargarDatos();
-  setInterval(cargarDatos, 15 * 60 * 1000); // Auto-actualiza cada 15 min
+  setInterval(recargarTodo, 15 * 60 * 1000); // Auto-actualiza cada 15 min
 }
 
 // Fechas por defecto - desde hace 30 dias hasta hoy
-const hoy = new Date().toISOString().split('T')[0];
-const hace30 = new Date();
-hace30.setDate(hace30.getDate() - 30);
-const hace30str = hace30.toISOString().split('T')[0];
-document.getElementById('filtroHasta').value = hoy;
-document.getElementById('filtroDesde').value = hace30str;
+function fechasPorDefecto() {
+  const hace30 = new Date();
+  hace30.setDate(hace30.getDate() - 30);
+  document.getElementById('filtroHasta').value = fechaLocalISO();
+  document.getElementById('filtroDesde').value = fechaLocalISO(hace30);
+}
+fechasPorDefecto();
+document.getElementById('filtroEquipo').innerHTML = '<option value="">Todos</option>' +
+  EQUIPOS.map(e => `<option value="${e}">${e}</option>`).join('');
 renderSelectorResumen();
 renderSelectorGeneral();
 </script>
@@ -2345,7 +3259,7 @@ renderSelectorGeneral();
     getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut
   } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
   import {
-    getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, query, orderBy, serverTimestamp
+    getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, updateDoc, query, orderBy, serverTimestamp, where, Timestamp
   } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
   const app = initializeApp(firebaseConfig);
@@ -2353,7 +3267,7 @@ renderSelectorGeneral();
   const db = getFirestore(app);
 
   // Exponemos lo necesario para que el resto del script (fuera del módulo) lo use
-  window.FB = { auth, db, collection, getDocs, doc, getDoc, setDoc, addDoc, query, orderBy, serverTimestamp };
+  window.FB = { auth, db, collection, getDocs, doc, getDoc, setDoc, addDoc, updateDoc, query, orderBy, serverTimestamp, where, Timestamp };
 
   const overlay   = document.getElementById('loginOverlay');
   const header    = document.getElementById('appHeader');
