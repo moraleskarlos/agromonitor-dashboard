@@ -613,7 +613,7 @@
         <button class="graf-btn" onclick="setGrafView('drenaje',this)">🚿 Drenaje</button>
         <button class="graf-btn" onclick="setGrafView('humedad',this)">🌱 Humedad</button>
         <button class="graf-btn" onclick="setGrafView('pctdrenaje',this)">📉 % Drenaje</button>
-        <button class="graf-btn" onclick="setGrafView('comparacion',this)">🔀 Goteo vs Drenaje</button>
+        <button class="graf-btn" onclick="setGrafView('comparacion',this)">🔀 Goteo vs Drenaje vs Lisímetro</button>
         <button class="graf-btn" onclick="setGrafView('lisimetro',this)">🧪 Lisímetro</button>
         <button class="graf-btn" onclick="setGrafView('general',this)">📊 Resumen general</button>
       </div>
@@ -756,20 +756,20 @@
       <div class="card"><div class="card-title">🧪 Volumen por día (ml) <span style="font-weight:400;text-transform:none;letter-spacing:0;">— suma de los riegos registrados con volumen</span></div><div class="chart-container" style="height:220px"><canvas id="chartPctDrenajeVol"></canvas></div></div>
     </div>
 
-    <!-- Vista Goteo vs Drenaje (mezclado, por sector y parámetro) -->
+    <!-- Vista Goteo vs Drenaje vs Lisímetro (por sector y parámetro; lisímetro en columnas) -->
     <div id="grafView-comparacion" class="graf-view" style="display:none">
       <div style="margin-bottom:14px;">
         <button class="graf-btn" onclick="abrirModalObjetivos()">✏️ Editar objetivos de Goteo</button>
         <div class="objetivo-nota" style="color:var(--muted);font-size:12px;margin-top:8px;"></div>
       </div>
-      <div id="comparacionMensaje" class="empty">Elegí un Sector arriba para comparar Goteo vs Drenaje en ese mismo lugar.</div>
+      <div id="comparacionMensaje" class="empty">Elegí un Sector arriba para comparar Goteo, Drenaje y Lisímetro en ese mismo lugar.</div>
       <div id="comparacionChartsWrap" style="display:none;grid-template-columns:repeat(2,1fr);gap:14px;">
-        <div class="card"><div class="card-title">📈 pH — Goteo vs Drenaje</div><div class="chart-container" style="height:220px"><canvas id="chartComppH"></canvas></div></div>
-        <div class="card"><div class="card-title">📈 CE — Goteo vs Drenaje</div><div class="chart-container" style="height:220px"><canvas id="chartCompCE"></canvas></div></div>
-        <div class="card"><div class="card-title">📈 Nitratos — Goteo vs Drenaje</div><div class="chart-container" style="height:220px"><canvas id="chartCompNitratos"></canvas></div></div>
-        <div class="card"><div class="card-title">📈 Potasio — Goteo vs Drenaje</div><div class="chart-container" style="height:220px"><canvas id="chartCompPotasio"></canvas></div></div>
-        <div class="card"><div class="card-title">📈 Calcio — Goteo vs Drenaje</div><div class="chart-container" style="height:220px"><canvas id="chartCompCalcio"></canvas></div></div>
-        <div class="card"><div class="card-title">📈 Sodio — Goteo vs Drenaje</div><div class="chart-container" style="height:220px"><canvas id="chartCompSodio"></canvas></div></div>
+        <div class="card"><div class="card-title">📈 pH — Goteo vs Drenaje vs Lisímetro</div><div class="chart-container" style="height:220px"><canvas id="chartComppH"></canvas></div></div>
+        <div class="card"><div class="card-title">📈 CE — Goteo vs Drenaje vs Lisímetro</div><div class="chart-container" style="height:220px"><canvas id="chartCompCE"></canvas></div></div>
+        <div class="card"><div class="card-title">📈 Nitratos — Goteo vs Drenaje vs Lisímetro</div><div class="chart-container" style="height:220px"><canvas id="chartCompNitratos"></canvas></div></div>
+        <div class="card"><div class="card-title">📈 Potasio — Goteo vs Drenaje vs Lisímetro</div><div class="chart-container" style="height:220px"><canvas id="chartCompPotasio"></canvas></div></div>
+        <div class="card"><div class="card-title">📈 Calcio — Goteo vs Drenaje vs Lisímetro</div><div class="chart-container" style="height:220px"><canvas id="chartCompCalcio"></canvas></div></div>
+        <div class="card"><div class="card-title">📈 Sodio — Goteo vs Drenaje vs Lisímetro</div><div class="chart-container" style="height:220px"><canvas id="chartCompSodio"></canvas></div></div>
       </div>
     </div>
 
@@ -1906,7 +1906,9 @@ const LIMITES_MED = { pH: [0, 14], CE: [0, 20], Nitratos: [0, 2000], Potasio: [0
 const NOMBRE_CAMPO = { fecha: 'Fecha', equipo: 'Equipo', sector: 'Sector', observacion: 'Observación', hilera: 'Hilera',
   humedad_inicial: 'H. Inicial', humedad_media: 'H. Media', humedad_final: 'H. Final', riego: 'Riego',
   vol_goteo_ml: 'Vol. goteo (ml)', vol_drenaje_ml: 'Vol. drenaje (ml)', PorcentajeDrenaje: '% Drenaje',
-  hito_tipo: 'Tipo de hito', hito_descripcion: 'Descripción', anulado: 'Eliminado' };
+  hito_tipo: 'Tipo de hito', hito_descripcion: 'Descripción', anulado: 'Eliminado', tipo: 'Tipo de registro' };
+// Tipos que comparten los mismos campos (pH, CE, Nitratos, Potasio, Calcio, Sodio): se puede corregir el tipo entre ellos
+const TIPOS_INTERCAMBIABLES = ['Goteo', 'Drenaje', 'Lisimetro'];
 const nombreCampo = c => NOMBRE_CAMPO[c] || c;
 const etiquetaTipoReg = t => t === 'Hito' ? '📌 Hito' : (NOMBRE_TIPO[t] || t);
 
@@ -1972,8 +1974,12 @@ function abrirEditar(id) {
   const num = camposEdicion(r).map(f => `<label>${nombreCampo(f.campo)}${f.opcional ? '' : ' *'}
       <input class="input-modal" type="number" step="any" id="ed_${f.campo}" value="${esNum(r[f.campo]) ? Number(r[f.campo]) : ''}" ${r.tipo === 'PorcentajeDrenaje' && tieneVol(r) ? 'oninput="previewPctEdicion()"' : ''}></label>`).join('');
   const esHito = r.tipo === 'Hito';
+  const cambiaTipo = TIPOS_INTERCAMBIABLES.includes(r.tipo);
   const cuerpo = `<div class="reg-resumen">${resumenRegistro(r)}</div>
     <div class="reg-campos">
+      ${cambiaTipo ? `<div class="reg-campo-full"><label>Tipo de registro
+        <select class="input-modal" id="ed_tipo">${TIPOS_INTERCAMBIABLES.map(t => `<option value="${t}"${t === r.tipo ? ' selected' : ''}>${NOMBRE_TIPO[t]}</option>`).join('')}</select></label>
+        <div style="color:#8fa3b3;font-size:11px;margin-top:4px;">Si el operario lo registró con el tipo equivocado, cámbialo aquí: se conservan todos los valores.</div></div>` : ''}
       <label>Fecha <input class="input-modal" type="date" id="ed_fecha" value="${r.fecha || ''}"></label>
       <label>Equipo <select class="input-modal" id="ed_equipo" onchange="cambioEquipoEdicion()">${EQUIPOS.map(e => `<option${e === r.equipo ? ' selected' : ''}>${e}</option>`).join('')}${r.equipo && !EQUIPOS.includes(r.equipo) ? `<option selected>${escH(r.equipo)}</option>` : ''}</select></label>
       <label>Sector <select class="input-modal" id="ed_sector">${opcionesSector(r.equipo, r.sector)}</select></label>
@@ -2004,6 +2010,12 @@ async function guardarEdicion(id) {
   const upd = {}, cambios = [];
   const anota = (campo, antes, despues, valorGuardado) => { cambios.push({ campo, antes: antes ?? null, despues: despues ?? null }); upd[campo] = valorGuardado; };
 
+  // Tipo de registro (solo entre Goteo, Drenaje y Lisímetro)
+  const selTipo = document.getElementById('ed_tipo');
+  if (selTipo && selTipo.value !== r.tipo) {
+    if (!TIPOS_INTERCAMBIABLES.includes(selTipo.value)) return errorRegModal('Ese cambio de tipo no está permitido.');
+    anota('tipo', r.tipo, selTipo.value, selTipo.value);
+  }
   // Fecha, equipo, sector
   const fecha = document.getElementById('ed_fecha').value;
   if (!fecha) return errorRegModal('La fecha es obligatoria.');
@@ -2124,7 +2136,8 @@ async function abrirHistorialRegistro(id) {
     const items = snap.docs.map(d => d.data()).sort((a, b) => (b.fecha && b.fecha.toDate ? b.fecha.toDate() : 0) - (a.fecha && a.fecha.toDate ? a.fecha.toDate() : 0));
     document.getElementById('histRegLista').innerHTML = items.length ? items.map(h => `<div class="hist-row">
       <div><b>${ACCION_TXT[h.accion] || h.accion}</b> por ${escH(h.usuario_nombre || '—')} · ${fechaHoraTS(h.fecha)}</div>
-      ${h.accion === 'editar' ? (h.cambios || []).map(c => `<div class="hist-meta">${nombreCampo(c.campo)}: ${escH(fmtCambio(c.antes))} → <b style="color:#fff">${escH(fmtCambio(c.despues))}</b></div>`).join('') : ''}
+      ${h.accion === 'editar' ? (h.cambios || []).map(c => { const f = v => c.campo === 'tipo' ? (NOMBRE_TIPO[v] || v) : fmtCambio(v);
+        return `<div class="hist-meta">${nombreCampo(c.campo)}: ${escH(f(c.antes))} → <b style="color:#fff">${escH(f(c.despues))}</b></div>`; }).join('') : ''}
       <div class="hist-meta">Motivo: ${escH(h.motivo || '—')}</div></div>`).join('') : '<div class="empty">Sin cambios registrados.</div>';
   } catch (e) {
     console.error(e);
@@ -2774,16 +2787,29 @@ function renderGraficos() {
       params.forEach(p => {
         const lg = getLinea(goteo, p);
         const ld = getLinea(drenaje, p);
-        const fechas = [...new Set([...lg.labels, ...ld.labels])].sort();
+        const ll = getLinea(lisimetro, p);
+        const fechas = [...new Set([...lg.labels, ...ld.labels, ...ll.labels])].sort();
         const serie = (linea) => fechas.map(f => { const i = linea.labels.indexOf(f); return i >= 0 ? linea.values[i] : null; });
         const serieObs = (linea) => fechas.map(f => { const i = linea.labels.indexOf(f); return i >= 0 ? linea.observaciones[i] : undefined; });
         const dsComp = [
           { label: 'Goteo',   data: serie(lg), observaciones: serieObs(lg), borderColor: '#4caf50', backgroundColor: '#4caf5022', tension: 0.4, pointRadius: 3, fill: false, spanGaps: true },
           { label: 'Drenaje', data: serie(ld), observaciones: serieObs(ld), borderColor: '#ab47bc', backgroundColor: '#ab47bc22', tension: 0.4, pointRadius: 3, fill: false, spanGaps: true },
         ];
+        // Lisímetro de succión: columnas verticales, solo en los días con medición
+        if (ll.labels.length) {
+          dsComp.push({ type: 'bar', label: 'Lisímetro', data: serie(ll), observaciones: serieObs(ll),
+            backgroundColor: '#4fb3d955', borderColor: '#4fb3d9', borderWidth: 1, borderRadius: 3,
+            barPercentage: 0.9, categoryPercentage: 0.9, maxBarThickness: 18, order: 10 }); // order alto = se dibuja detrás de las líneas
+        }
         const dsObj = datasetObjetivo(p, fechas, 'Objetivo Goteo');
         if (dsObj) dsComp.push(dsObj);
-        mkChart('chartComp'+p, 'line', fechas, dsComp);
+        // Eje Y ajustado a los valores (no parte de 0): las columnas parten desde abajo del gráfico
+        mkChart('chartComp'+p, 'line', fechas, dsComp, {
+          scales: {
+            x: { offset: true, ticks: { color: '#6b9470', font: { size: 9 } }, grid: { color: '#1e3d22' } },
+            y: { beginAtZero: false, grace: '5%', ticks: { color: '#6b9470', font: { size: 9 } }, grid: { color: '#1e3d22' } }
+          }
+        });
       });
     }
   }
