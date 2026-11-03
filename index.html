@@ -367,6 +367,17 @@
     .anulado-item { border: 1px solid #2c3b4a; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; color: #fff; font-size: 13px; }
     @media (max-width: 560px) { .reg-campos { grid-template-columns: 1fr; } }
 
+    /* AMPLIAR GRÁFICO */
+    .btn-ampliar { float: right; background: transparent; border: 1px solid var(--border); border-radius: 6px; color: var(--muted);
+      font-size: 11px; font-weight: 700; padding: 3px 9px; cursor: pointer; text-transform: none; letter-spacing: 0; margin-top: -3px; }
+    .btn-ampliar:hover { border-color: var(--accent); color: var(--accent); }
+    #grafModal .modal-box { max-width: 1400px; width: 96vw; max-height: 94vh; padding: 18px 22px; }
+    #grafModal .graf-grande { height: 62vh; min-height: 320px; }
+    .hitos-tabla { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+    .hitos-tabla td { padding: 6px 8px; border-bottom: 1px solid #2c3b4a; color: #e0e0e0; vertical-align: top; }
+    .hitos-tabla td:first-child { color: #ffe082; font-weight: 700; white-space: nowrap; }
+    @media (max-width: 700px) { #grafModal .modal-box { width: 100vw; max-height: 100vh; border-radius: 0; padding: 12px; } #grafModal .graf-grande { height: 55vh; } }
+
     /* HITOS */
     .hito-chip { display:inline-block; background:#ffd54f22; color:#ffd54f; border:1px solid #ffd54f55; border-radius:6px; padding:1px 6px; font-size:11px; font-weight:700; white-space:nowrap; }
     .hitos-lista { display:flex; flex-direction:column; gap:6px; max-height:180px; overflow:auto; }
@@ -589,6 +600,19 @@
       <div id="regModalCuerpo"></div>
       <div id="regModalError" style="color:#ef5350;font-size:12px;margin-top:10px;min-height:14px;"></div>
       <div id="regModalBotones" style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;"></div>
+    </div>
+  </div>
+
+  <!-- MODAL: GRÁFICO AMPLIADO -->
+  <div class="modal-overlay" id="grafModal" onclick="if (event.target === this) cerrarGrafico()">
+    <div class="modal-box">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;">
+        <h3 id="grafModalTitulo" style="margin:0;"></h3>
+        <button class="graf-btn" onclick="cerrarGrafico()">✕ Cerrar</button>
+      </div>
+      <div id="grafModalSub" style="color:#8fa3b3;font-size:12px;margin-bottom:8px;"></div>
+      <div class="graf-grande"><canvas id="grafModalCanvas"></canvas></div>
+      <div id="grafModalHitos"></div>
     </div>
   </div>
 
@@ -2465,8 +2489,9 @@ const pluginHitos = {
       const j = fechas.findIndex(l => l > f);
       return (x.getPixelForValue(j - 1) + x.getPixelForValue(j)) / 2;
     };
+    const compacto = chart.options.plugins.hitos.compacto;
     ctx.save();
-    ctx.font = '600 10px Inter, system-ui, sans-serif';
+    ctx.font = compacto ? '12px system-ui, sans-serif' : '600 12px Inter, system-ui, sans-serif';
     const ocupados = []; // para escalonar globos que se pisarían
     Object.keys(porFecha).sort().forEach(f => {
       const px = posX(f);
@@ -2475,24 +2500,42 @@ const pluginHitos = {
       // Línea vertical
       ctx.strokeStyle = '#ffd54f'; ctx.lineWidth = 1.5; ctx.setLineDash([5, 4]);
       ctx.beginPath(); ctx.moveTo(px, a.top); ctx.lineTo(px, a.bottom); ctx.stroke(); ctx.setLineDash([]);
-      // Globo
-      const fCorta = f.slice(8, 10) + '/' + f.slice(5, 7); // fecha corta en el globo, para saber a qué línea corresponde
-      const lineas = grupo.slice(0, 3).map(h => `${fCorta} ${hitoCorto(h)}` + (HITOS_MOSTRAR_SECTOR && h.sector ? ` · ${h.sector}` : ''));
+      // Gráfico chico: solo un ícono redondo arriba de la línea (sin texto, no tapa los datos)
+      if (compacto) {
+        const icono = grupo.length > 1 ? String(grupo.length) : hitoIcon(grupo[0].tipo);
+        ctx.fillStyle = '#2a2208'; ctx.strokeStyle = '#ffd54f'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(px, a.top + 10, 9, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#ffe082'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.font = grupo.length > 1 ? '700 10px system-ui, sans-serif' : '11px system-ui, sans-serif';
+        ctx.fillText(icono, px, a.top + 10.5);
+        ctx.textAlign = 'left';
+        return;
+      }
+      // Globo (gráfico ampliado)
+      const lineas = grupo.slice(0, 3).map(h => hitoCorto(h) + (HITOS_MOSTRAR_SECTOR && h.sector ? ` · ${h.sector}` : ''));
       if (grupo.length > 3) lineas.push(`+${grupo.length - 3} más`);
       const w = Math.max(...lineas.map(t => ctx.measureText(t).width)) + 12;
-      const hBox = lineas.length * 13 + 6;
-      let bx = px + 5;
-      if (bx + w > a.right) bx = px - w - 5;
+      const hBox = lineas.length * 16 + 8;
+      const sep = 9; // espacio para la flecha
+      let bx = px + sep;
+      let alaIzq = false;
+      if (bx + w > a.right) { bx = px - w - sep; alaIzq = true; }
       if (bx < a.left) bx = a.left;
       let by = a.top + 2;
-      while (ocupados.some(o => bx < o.x2 && bx + w > o.x1 && by < o.y2 && by + hBox > o.y1) && by < a.bottom - hBox) by += hBox + 3;
-      ocupados.push({ x1: bx, x2: bx + w, y1: by, y2: by + hBox });
+      // El espacio ocupado incluye la flecha (de la línea al globo), con un margen, para que dos globos no queden pegados
+      const x1 = Math.min(px, bx) - 4, x2 = Math.max(px, bx + w) + 4;
+      while (ocupados.some(o => x1 < o.x2 && x2 > o.x1 && by < o.y2 && by + hBox > o.y1) && by < a.bottom - hBox) by += hBox + 4;
+      ocupados.push({ x1, x2, y1: by, y2: by + hBox });
       ctx.fillStyle = 'rgba(30, 26, 8, 0.92)'; ctx.strokeStyle = '#ffd54f'; ctx.lineWidth = 1;
       ctx.beginPath();
       if (ctx.roundRect) ctx.roundRect(bx, by, w, hBox, 4); else ctx.rect(bx, by, w, hBox);
       ctx.fill(); ctx.stroke();
+      // Flecha desde el globo hasta la línea del hito
+      const yM = by + hBox / 2, borde = alaIzq ? bx + w : bx;
+      ctx.fillStyle = '#ffd54f';
+      ctx.beginPath(); ctx.moveTo(px, yM); ctx.lineTo(borde, yM - 5); ctx.lineTo(borde, yM + 5); ctx.closePath(); ctx.fill();
       ctx.fillStyle = '#ffe082'; ctx.textBaseline = 'top';
-      lineas.forEach((t, k) => ctx.fillText(t, bx + 6, by + 4 + k * 13));
+      lineas.forEach((t, k) => ctx.fillText(t, bx + 6, by + 5 + k * 16));
     });
     ctx.restore();
   }
@@ -2530,15 +2573,16 @@ function getLineaPctDrenaje(data) {
   };
 }
 
-function mkChart(id, type, labels, datasets, opts = {}) {
+function mkChart(id, type, labels, datasets, opts = {}, ampliado = false) {
   if (charts[id]) charts[id].destroy();
   const el = document.getElementById(id);
   if (!el) return;
+  const args = { type, labels, datasets: datasets.map(d => ({ ...d, data: [...d.data] })), opts };
   // Si los labels son fechas AAAA-MM-DD, se muestran como DD-MM-AAAA sin tocar el orden ni los datos
   const labelsMostrados = labels.map(l => RE_FECHA_ISO.test(l) ? formatFecha(l) : l);
   // Hitos: solo en gráficos de línea cuyo eje X son fechas
   const esSerieFechas = type === 'line' && labels.length && labels.every(l => RE_FECHA_ISO.test(l));
-  const paramChart = (id.match(/(pH|CE|Nitratos|Potasio|Calcio|Sodio)$/) || [])[1];
+  const paramChart = ampliado ? PARAM_AMPLIADO : (id.match(/(pH|CE|Nitratos|Potasio|Calcio|Sodio)$/) || [])[1];
   const hitosChart = esSerieFechas && HITOS_GRAF.length
     ? HITOS_GRAF.filter(h => h.fecha >= labels[0] && h.fecha <= labels[labels.length - 1] && (!h.auto || h.param === paramChart)) : [];
   charts[id] = new Chart(el.getContext('2d'), {
@@ -2548,9 +2592,10 @@ function mkChart(id, type, labels, datasets, opts = {}) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      // espacio arriba para los íconos de hitos en el gráfico chico
       plugins: {
-        hitos: { lista: hitosChart },
-        legend: { labels: { color: '#6b9470', font: { size: 10 } } },
+        hitos: { lista: hitosChart, compacto: !ampliado },
+        legend: { labels: { color: '#6b9470', font: { size: ampliado ? 13 : 10 } } },
         tooltip: {
           callbacks: {
             afterLabel: (context) => {
@@ -2568,8 +2613,46 @@ function mkChart(id, type, labels, datasets, opts = {}) {
     }
   });
   charts[id].$fechasISO = esSerieFechas ? labels : null;
+  charts[id].$args = args;
+  charts[id].$hitos = hitosChart;
   if (hitosChart.length) charts[id].draw();
+  // Botón "⛶ Ampliar" en los gráficos por fecha
+  if (esSerieFechas && !ampliado) {
+    const titulo = el.closest('.card') && el.closest('.card').querySelector('.card-title');
+    if (titulo && !titulo.querySelector('.btn-ampliar')) {
+      titulo.insertAdjacentHTML('beforeend', `<button class="btn-ampliar" onclick="ampliarGrafico('${id}')">⛶ Ampliar</button>`);
+    }
+  }
 }
+
+// ── GRÁFICO AMPLIADO (ventana flotante) ──
+let PARAM_AMPLIADO = null;
+function ampliarGrafico(id) {
+  PARAM_AMPLIADO = (id.match(/(pH|CE|Nitratos|Potasio|Calcio|Sodio)$/) || [])[1];
+  const c = charts[id];
+  if (!c || !c.$args) return;
+  const a = c.$args;
+  const titulo = c.canvas.closest('.card').querySelector('.card-title').childNodes[0].textContent.trim();
+  document.getElementById('grafModalTitulo').textContent = titulo;
+  document.getElementById('grafModalSub').textContent = document.getElementById('grafEquipoSubtitulo').textContent +
+    (document.getElementById('filtroSector').value ? ' · ' + document.getElementById('filtroSector').value : '') +
+    ` · ${formatFecha(a.labels[0])} a ${formatFecha(a.labels[a.labels.length - 1])}`;
+  document.getElementById('grafModal').style.display = 'flex';
+  // Mismo gráfico, en grande y con los globos completos
+  const grandes = { ticks: { color: '#9fbfa3', font: { size: 12 } }, grid: { color: '#1e3d22' } };
+  const opts = { ...a.opts, scales: { x: { ...((a.opts.scales || {}).x || {}), ...grandes }, y: { ...((a.opts.scales || {}).y || {}), ...grandes } } };
+  mkChart('grafModalCanvas', a.type, a.labels, a.datasets.map(d => ({ ...d, pointRadius: d.pointRadius ? 4 : 0 })), opts, true);
+  // Lista de hitos de este gráfico, con la descripción completa
+  const hs = c.$hitos || [];
+  document.getElementById('grafModalHitos').innerHTML = hs.length ? `<div style="color:#ffd54f;font-weight:700;font-size:12px;margin-top:14px;text-transform:uppercase;letter-spacing:1px;">📌 Hitos en este gráfico (${hs.length})</div>
+    <table class="hitos-tabla">${hs.map(h => `<tr><td>${formatFecha(h.fecha)}</td><td>${hitoIcon(h.tipo)} ${escH(h.tipo)}</td>
+      <td>${escH(h.descripcion || '—')}</td><td style="color:#8fa3b3">${escH(h.sector || 'Todo el equipo')}${h.trabajador ? ' · ' + escH(h.trabajador.split(' ')[0]) : ''}</td></tr>`).join('')}</table>` : '';
+}
+function cerrarGrafico() {
+  document.getElementById('grafModal').style.display = 'none';
+  if (charts.grafModalCanvas) { charts.grafModalCanvas.destroy(); delete charts.grafModalCanvas; }
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.getElementById('grafModal').style.display === 'flex') cerrarGrafico(); });
 
 function getDias(data) {
   const cnt = {};
