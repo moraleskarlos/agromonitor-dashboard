@@ -1281,7 +1281,7 @@ function datasetObjetivo(param, labels, etiqueta = 'Objetivo') {
   if (!eq || !labels.length) return null;
   const data = labels.map(f => objetivoEn(eq, param, f));
   if (data.every(v => v === null)) return null;
-  return { label: etiqueta, data, stepped: 'after', borderColor: '#ff7043', backgroundColor: 'transparent', borderDash: [6,4], borderWidth: 2, pointRadius: 0, fill: false, spanGaps: true };
+  return { label: etiqueta, data, stepped: 'before', borderColor: '#ff7043', backgroundColor: 'transparent', borderDash: [6,4], borderWidth: 2, pointRadius: 0, fill: false, spanGaps: true };
 }
 
 // Hitos automáticos: cada cambio de objetivo con fecha (solo se dibuja en los gráficos de ese parámetro)
@@ -2483,6 +2483,10 @@ const pluginHitos = {
     const porFecha = {};
     hitos.forEach(h => { (porFecha[h.fecha] = porFecha[h.fecha] || []).push(h); });
     const posX = f => {
+      if (chart.$modoTiempo) {
+        const n = diaNum(f);
+        return n < x.min || n > x.max ? null : x.getPixelForValue(n);
+      }
       const i = fechas.indexOf(f);
       if (i >= 0) return x.getPixelForValue(i);
       if (f < fechas[0] || f > fechas[fechas.length - 1]) return null;
@@ -2573,6 +2577,11 @@ function getLineaPctDrenaje(data) {
   };
 }
 
+// Eje de fechas: 'A' = solo fechas con medición + fechas de hitos/cambios; 'B' = calendario proporcional
+const MODO_EJE = 'A';
+const diaNum = f => Date.UTC(+f.slice(0, 4), +f.slice(5, 7) - 1, +f.slice(8, 10)) / 864e5;
+const isoDeDia = n => new Date(Math.round(n) * 864e5).toISOString().slice(0, 10);
+
 function mkChart(id, type, labels, datasets, opts = {}, ampliado = false) {
   if (charts[id]) charts[id].destroy();
   const el = document.getElementById(id);
@@ -2585,11 +2594,40 @@ function mkChart(id, type, labels, datasets, opts = {}, ampliado = false) {
   const paramChart = ampliado ? PARAM_AMPLIADO : (id.match(/(pH|CE|Nitratos|Potasio|Calcio|Sodio)$/) || [])[1];
   const hitosChart = esSerieFechas && HITOS_GRAF.length
     ? HITOS_GRAF.filter(h => h.fecha >= labels[0] && h.fecha <= labels[labels.length - 1] && (!h.auto || h.param === paramChart)) : [];
-  charts[id] = new Chart(el.getContext('2d'), {
-    type,
-    data: { labels: labelsMostrados, datasets },
-    plugins: [pluginHitos],
-    options: {
+  // ── Ajuste del eje para que objetivo e hitos queden en su fecha exacta ──
+  let labelsUsar = labels, dsUsar = datasets, fechasEje = labels;
+  const eqObjetivo = document.getElementById('filtroEquipo').value;
+  const esObjetivo = d => d.label && String(d.label).startsWith('Objetivo') && eqObjetivo && paramChart;
+  if (esSerieFechas && MODO_EJE === 'A') {
+    // Se agregan al eje las fechas de hitos y cambios de objetivo que no tienen medición
+    const extra = [...new Set(hitosChart.map(h => h.fecha))].filter(f => !labels.includes(f));
+    if (extra.length) {
+      labelsUsar = [...labels, ...extra].sort();
+      const pos = Object.fromEntries(labels.map((l, i) => [l, i]));
+      dsUsar = datasets.map(d => esObjetivo(d)
+        ? { ...d, data: labelsUsar.map(f => objetivoEn(eqObjetivo, paramChart, f)) }
+        : { ...d, spanGaps: true, data: labelsUsar.map(f => f in pos ? d.data[pos[f]] : null),
+            observaciones: d.observaciones ? labelsUsar.map(f => f in pos ? d.observaciones[pos[f]] : undefined) : undefined });
+      fechasEje = labelsUsar;
+    }
+  }
+  if (esSerieFechas && MODO_EJE === 'B') {
+    // Eje de calendario: cada punto va en su día real; el objetivo cambia exactamente en la fecha del cambio
+    const cambios = esObjetivo({ label: 'Objetivo' }) ? tramosDe(eqObjetivo, paramChart).map(t => t.desde).filter(f => f > labels[0] && f <= labels[labels.length - 1]) : [];
+    dsUsar = datasets.map(d => {
+      if (esObjetivo(d)) {
+        const fs = [...new Set([...labels, ...cambios])].sort();
+        return { ...d, data: fs.map(f => ({ x: diaNum(f), y: objetivoEn(eqObjetivo, paramChart, f) })) };
+      }
+      const idx = labels.map((_, i) => i).filter(i => d.data[i] !== null && d.data[i] !== undefined);
+      return { ...d, data: idx.map(i => ({ x: diaNum(labels[i]), y: d.data[i] })),
+        observaciones: d.observaciones ? idx.map(i => d.observaciones[i]) : undefined,
+        ...(d.type === 'bar' ? { barThickness: ampliado ? 14 : 8, maxBarThickness: undefined, barPercentage: undefined, categoryPercentage: undefined } : {}) };
+    });
+  }
+  const labelsMostradosUsar = labelsUsar.map(l => RE_FECHA_ISO.test(l) ? formatFecha(l) : l);
+
+  const opciones = {
       responsive: true,
       maintainAspectRatio: false,
       // espacio arriba para los íconos de hitos en el gráfico chico
@@ -2610,9 +2648,30 @@ function mkChart(id, type, labels, datasets, opts = {}, ampliado = false) {
         y: { ticks: { color: '#6b9470', font: { size: 9 } }, grid: { color: '#1e3d22' } }
       } : {},
       ...opts
-    }
+  };
+  if (esSerieFechas && MODO_EJE === 'B') {
+    const x0 = diaNum(labels[0]), x1 = diaNum(labels[labels.length - 1]);
+    const base = (opciones.scales && opciones.scales.x) || {};
+    opciones.scales = { ...(opciones.scales || {}), x: { ...base, type: 'linear', min: x0 - 0.5, max: x1 + 0.5, offset: false,
+      ticks: { ...(base.ticks || {}), callback: v => formatFecha(isoDeDia(v)), maxRotation: 45, minRotation: 45, autoSkip: false },
+      // marcas solo en días exactos
+      afterBuildTicks: ax => {
+        const paso = Math.max(1, Math.ceil((x1 - x0) / (ampliado ? 20 : 10)));
+        ax.ticks = [];
+        for (let d = x0; d <= x1; d += paso) ax.ticks.push({ value: d });
+      } } };
+    // con el espaciado real, curvas menos suavizadas (si no, exageran entre mediciones lejanas)
+    dsUsar.forEach(d => { if (d.tension) d.tension = 0.15; });
+    if (opciones.plugins && opciones.plugins.tooltip) opciones.plugins.tooltip.callbacks.title = items => items.length ? formatFecha(isoDeDia(items[0].parsed.x)) : '';
+  }
+  charts[id] = new Chart(el.getContext('2d'), {
+    type,
+    data: { labels: MODO_EJE === 'B' && esSerieFechas ? undefined : labelsMostradosUsar, datasets: dsUsar },
+    plugins: [pluginHitos],
+    options: opciones
   });
-  charts[id].$fechasISO = esSerieFechas ? labels : null;
+  charts[id].$modoTiempo = esSerieFechas && MODO_EJE === 'B';
+  charts[id].$fechasISO = esSerieFechas ? fechasEje : null;
   charts[id].$args = args;
   charts[id].$hitos = hitosChart;
   if (hitosChart.length) charts[id].draw();
