@@ -608,13 +608,19 @@
     <div class="modal-box">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;">
         <h3 id="grafModalTitulo" style="margin:0;"></h3>
-        <button class="graf-btn" onclick="cerrarGrafico()">✕ Cerrar</button>
+        <div style="display:flex;gap:8px;">
+          <button class="graf-btn" onclick="exportarGrafico()" title="Descarga el gráfico como imagen PNG, con fondo blanco y letra grande, lista para Word">📷 Descargar imagen</button>
+          <button class="graf-btn" onclick="cerrarGrafico()">✕ Cerrar</button>
+        </div>
       </div>
       <div id="grafModalSub" style="color:#8fa3b3;font-size:12px;margin-bottom:8px;"></div>
       <div class="graf-grande"><canvas id="grafModalCanvas"></canvas></div>
       <div id="grafModalHitos"></div>
     </div>
   </div>
+
+  <!-- Contenedor fuera de pantalla donde se dibuja la imagen exportada -->
+  <div id="grafExportWrap" style="position:fixed;left:-20000px;top:0;width:1200px;height:675px;"><canvas id="grafExportCanvas"></canvas></div>
 
   <!-- MODAL: AVISO DE SESIÓN POR INACTIVIDAD -->
   <div class="modal-overlay" id="sesionModal">
@@ -2472,6 +2478,16 @@ function calcularHitosGraf() {
 
 // Plugin de Chart.js: dibuja cada hito como línea vertical punteada con un globo de texto arriba.
 // Si el día del hito no tiene medición en ese gráfico, la línea se ubica entre las fechas vecinas.
+const pluginFondo = {
+  id: 'fondo',
+  beforeDraw(chart) {
+    const color = chart.options.plugins.fondo && chart.options.plugins.fondo.color;
+    if (!color) return;
+    const { ctx, width, height } = chart;
+    ctx.save(); ctx.fillStyle = color; ctx.fillRect(0, 0, width, height); ctx.restore();
+  }
+};
+
 const pluginHitos = {
   id: 'hitos',
   afterDatasetsDraw(chart) {
@@ -2494,15 +2510,18 @@ const pluginHitos = {
       return (x.getPixelForValue(j - 1) + x.getPixelForValue(j)) / 2;
     };
     const compacto = chart.options.plugins.hitos.compacto;
+    const E = chart.options.plugins.hitos.escala || 1;        // tamaño de letra de los globos
+    const claro = chart.options.plugins.hitos.claro;          // colores para fondo blanco
+    const cLinea = claro ? '#b7791f' : '#ffd54f', cFondo = claro ? '#fff8e1' : 'rgba(30, 26, 8, 0.92)', cTexto = claro ? '#5d4300' : '#ffe082';
     ctx.save();
-    ctx.font = compacto ? '12px system-ui, sans-serif' : '600 12px Inter, system-ui, sans-serif';
+    ctx.font = compacto ? '12px system-ui, sans-serif' : `600 ${Math.round(12 * E)}px Inter, system-ui, sans-serif`;
     const ocupados = []; // para escalonar globos que se pisarían
     Object.keys(porFecha).sort().forEach(f => {
       const px = posX(f);
       if (px === null) return;
       const grupo = porFecha[f];
       // Línea vertical
-      ctx.strokeStyle = '#ffd54f'; ctx.lineWidth = 1.5; ctx.setLineDash([5, 4]);
+      ctx.strokeStyle = cLinea; ctx.lineWidth = 1.5 * E; ctx.setLineDash([5 * E, 4 * E]);
       ctx.beginPath(); ctx.moveTo(px, a.top); ctx.lineTo(px, a.bottom); ctx.stroke(); ctx.setLineDash([]);
       // Gráfico chico: solo un ícono redondo arriba de la línea (sin texto, no tapa los datos)
       if (compacto) {
@@ -2518,8 +2537,8 @@ const pluginHitos = {
       // Globo (gráfico ampliado)
       const lineas = grupo.slice(0, 3).map(h => hitoCorto(h) + (HITOS_MOSTRAR_SECTOR && h.sector ? ` · ${h.sector}` : ''));
       if (grupo.length > 3) lineas.push(`+${grupo.length - 3} más`);
-      const w = Math.max(...lineas.map(t => ctx.measureText(t).width)) + 12;
-      const hBox = lineas.length * 16 + 8;
+      const w = Math.max(...lineas.map(t => ctx.measureText(t).width)) + 12 * E;
+      const hBox = lineas.length * 16 * E + 8 * E;
       const sep = 9; // espacio para la flecha
       let bx = px + sep;
       let alaIzq = false;
@@ -2530,16 +2549,16 @@ const pluginHitos = {
       const x1 = Math.min(px, bx) - 4, x2 = Math.max(px, bx + w) + 4;
       while (ocupados.some(o => x1 < o.x2 && x2 > o.x1 && by < o.y2 && by + hBox > o.y1) && by < a.bottom - hBox) by += hBox + 4;
       ocupados.push({ x1, x2, y1: by, y2: by + hBox });
-      ctx.fillStyle = 'rgba(30, 26, 8, 0.92)'; ctx.strokeStyle = '#ffd54f'; ctx.lineWidth = 1;
+      ctx.fillStyle = cFondo; ctx.strokeStyle = cLinea; ctx.lineWidth = 1 * E;
       ctx.beginPath();
       if (ctx.roundRect) ctx.roundRect(bx, by, w, hBox, 4); else ctx.rect(bx, by, w, hBox);
       ctx.fill(); ctx.stroke();
       // Flecha desde el globo hasta la línea del hito
       const yM = by + hBox / 2, borde = alaIzq ? bx + w : bx;
-      ctx.fillStyle = '#ffd54f';
+      ctx.fillStyle = cLinea;
       ctx.beginPath(); ctx.moveTo(px, yM); ctx.lineTo(borde, yM - 5); ctx.lineTo(borde, yM + 5); ctx.closePath(); ctx.fill();
-      ctx.fillStyle = '#ffe082'; ctx.textBaseline = 'top';
-      lineas.forEach((t, k) => ctx.fillText(t, bx + 6, by + 5 + k * 16));
+      ctx.fillStyle = cTexto; ctx.textBaseline = 'top';
+      lineas.forEach((t, k) => ctx.fillText(t, bx + 6 * E, by + 5 * E + k * 16 * E));
     });
     ctx.restore();
   }
@@ -2667,7 +2686,7 @@ function mkChart(id, type, labels, datasets, opts = {}, ampliado = false) {
   charts[id] = new Chart(el.getContext('2d'), {
     type,
     data: { labels: MODO_EJE === 'B' && esSerieFechas ? undefined : labelsMostradosUsar, datasets: dsUsar },
-    plugins: [pluginHitos],
+    plugins: [pluginHitos, pluginFondo],
     options: opciones
   });
   charts[id].$modoTiempo = esSerieFechas && MODO_EJE === 'B';
@@ -2686,7 +2705,9 @@ function mkChart(id, type, labels, datasets, opts = {}, ampliado = false) {
 
 // ── GRÁFICO AMPLIADO (ventana flotante) ──
 let PARAM_AMPLIADO = null;
+let ID_AMPLIADO = null;
 function ampliarGrafico(id) {
+  ID_AMPLIADO = id;
   PARAM_AMPLIADO = (id.match(/(pH|CE|Nitratos|Potasio|Calcio|Sodio)$/) || [])[1];
   const c = charts[id];
   if (!c || !c.$args) return;
@@ -2707,6 +2728,45 @@ function ampliarGrafico(id) {
     <table class="hitos-tabla">${hs.map(h => `<tr><td>${formatFecha(h.fecha)}</td><td>${hitoIcon(h.tipo)} ${escH(h.tipo)}</td>
       <td>${escH(h.descripcion || '—')}</td><td style="color:#8fa3b3">${escH(h.sector || 'Todo el equipo')}${h.trabajador ? ' · ' + escH(h.trabajador.split(' ')[0]) : ''}</td></tr>`).join('')}</table>` : '';
 }
+// ── EXPORTAR EL GRÁFICO AMPLIADO COMO IMAGEN (para Word) ──
+// Se dibuja aparte, con fondo blanco y letra grande: 1200×675 a doble resolución (2400×1350 px).
+// Al insertarla en Word a lo ancho de la página (~16 cm), los textos quedan en torno a 9–11 pt.
+const EXPORT = { titulo: 32, subtitulo: 22, leyenda: 24, ejes: 22, hitos: 1.8, lineas: 3.5, puntos: 5 };
+async function exportarGrafico() {
+  const c = charts[ID_AMPLIADO];
+  if (!c || !c.$args) return;
+  const a = c.$args;
+  const titulo = document.getElementById('grafModalTitulo').textContent.replace(/^\S+\s/, ''); // sin el emoji
+  const subtitulo = document.getElementById('grafModalSub').textContent;
+  const ejes = { ticks: { color: '#333333', font: { size: EXPORT.ejes } }, grid: { color: '#e3e3e3' }, border: { color: '#999999' } };
+  const base = a.opts.scales || {};
+  const opts = {
+    ...a.opts,
+    animation: false,
+    devicePixelRatio: 2,
+    layout: { padding: { top: 10, right: 30, bottom: 10, left: 10 } },
+    scales: { x: { ...(base.x || {}), ...ejes, ticks: { ...ejes.ticks, maxRotation: 45, minRotation: 45 } }, y: { ...(base.y || {}), ...ejes } },
+  };
+  const ds = a.datasets.map(d => ({ ...d, borderWidth: d.type === 'bar' ? 1.5 : (d.borderDash ? 3 : EXPORT.lineas), pointRadius: d.pointRadius ? EXPORT.puntos : 0 }));
+  mkChart('grafExportCanvas', a.type, a.labels, ds, opts, true);
+  const ch = charts.grafExportCanvas;
+  // Ajustes propios de la imagen: título, leyenda grande, fondo blanco, globos de hitos grandes y en colores claros
+  ch.options.plugins.title = { display: true, text: titulo, color: '#1b1b1b', font: { size: EXPORT.titulo, weight: '700' }, padding: { top: 6, bottom: 4 } };
+  ch.options.plugins.subtitle = { display: true, text: subtitulo, color: '#555555', font: { size: EXPORT.subtitulo }, padding: { bottom: 14 } };
+  ch.options.plugins.legend.labels = { color: '#1b1b1b', font: { size: EXPORT.leyenda }, boxWidth: 36, padding: 18 };
+  ch.options.plugins.fondo = { color: '#ffffff' };
+  ch.options.plugins.hitos = { ...ch.options.plugins.hitos, escala: EXPORT.hitos, claro: true };
+  ch.update('none');
+  await new Promise(r => requestAnimationFrame(r));
+  const url = ch.toBase64Image('image/png', 1);
+  const nombre = ['FertiMonitor', titulo, document.getElementById('filtroEquipo').value, document.getElementById('filtroSector').value, fechaLocalISO()]
+    .filter(Boolean).join('_').replace(/[^\wÁÉÍÓÚÑáéíóúñ.-]+/g, '_') + '.png';
+  const link = document.createElement('a');
+  link.href = url; link.download = nombre;
+  document.body.appendChild(link); link.click(); link.remove();
+  ch.destroy(); delete charts.grafExportCanvas;
+}
+
 function cerrarGrafico() {
   document.getElementById('grafModal').style.display = 'none';
   if (charts.grafModalCanvas) { charts.grafModalCanvas.destroy(); delete charts.grafModalCanvas; }
